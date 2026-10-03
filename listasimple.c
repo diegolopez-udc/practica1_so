@@ -152,8 +152,3 @@ void *GetSiguienteElemento(LISTASIMPLE l)
 {
       return GetFirstNextElement(l,0);
 }
-
-
-
-
-
