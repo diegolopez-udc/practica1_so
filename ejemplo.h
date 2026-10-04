@@ -16,8 +16,34 @@
 #include "path.h"
 #include "files.h"
 
+//Tamaño máximo nombre de comando:
 #define MAXNOMBRE 1024
 
+/*************VARIABLES DEL SHELLv4:***************/
+
+// Tamaños máximos
+#define MAXENTRADA 2048
+#define MAXPROMPT 128
+
+//Prompt por defecto:
+extern char prompt[MAXPROMPT];
+
+
+// Tipo de struct COMANDO (I):
+
+struct COMANDO{
+   char * nombre;
+   void (*funcion)(char**);
+   char *arguments;          // Añadimos strings de argumentos y ayudas para comando help.
+   char *help; 
+};
+
+
+/*********************************************/
+
+
+// COMANDOS:
+void Cmd_prompt(char * arg[]);
 void Cmd_fin (char * arg[]);
 void Cmd_autores(char *arg[]);
 void Cmd_date (char *arg[]);
@@ -43,5 +69,36 @@ void Cmd_exec (char *arg[]);
 void Cmd_pplano (char *arg[]);
 void Cmd_importpath (char *arg[]);
 
+
+/*********************************************/
+
+
+// Tipo de struct COMANDO (II):
+
+static struct COMANDO C[]={
+   {"prompt", Cmd_prompt, "[cad]", "Cambia el prompt (simbolo de aviso) del shell a la cadena cad:\n\t%u: nombre usuario\t%p: pid del shell\n\t%d: directorio actual\t%D: directorio actual (contraido)\n\t%B: Ultimo componente del directorio actual\n\t%m: nombre maquina\t%o: nombre del S.O.\n\t%t el tabulador\t%n: fin de linea\n\t%%: el caracter %\t%b: espacio en blanco"},
+   {"exit",Cmd_fin, "", "Termina la ejecucion del shell"},
+   {"bye",Cmd_fin, "", "Termina la ejecucion del shell"},
+   {"date",Cmd_date, "[-d|-t]", "Muestra la fecha y/o la hora actual"},
+   {"pid",Cmd_pid, "[-p]",	"Muestra el pid del shell o de su proceso padre"},
+   {"authors",Cmd_autores, "[-n|-l]",	"Muestra los nombres y/o logins de los autores"},
+   {"sysinfo",Cmd_sysinfo, "", "Muestra informacion de la maquina donde corre el shell"},
+   {"help",Cmd_help, "[cmd|-lt|-T|-all]",	"Muestra ayuda sobre los comandos\n\t-lt: lista topics de ayuda\n\t-T topic: lista comandos sobre ese topic\n\tcmd: info sobre el comando cmd\n\t-all: lista todos los topics con sus comandos"},
+   {"chdir",Cmd_chdir, "[dir]", "Cambia (o muestra) el directorio actual del shell"},
+   /*{"open",Cmd_open},
+   {"close",Cmd_close},
+   {"listopen",Cmd_listopen},
+   {"dup",Cmd_dup},
+   {"lseek",Cmd_lseek},
+   {"readstr",Cmd_readstr},
+   {"writestr",Cmd_writestr},
+   {"makefile",Cmd_makefile},
+   {"makedir",Cmd_makedir},
+   {"delete",Cmd_delete},
+   {"deltree",Cmd_deltree},
+   {"listfile",Cmd_listfile},
+   {"list",Cmd_list},*/
+   {NULL,NULL, NULL, NULL},
+  };
 
 #endif

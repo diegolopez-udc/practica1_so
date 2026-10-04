@@ -1,9 +1,8 @@
 #include "ejemplo.h"
-#include "Shellv4.c"
 
 
 
-/***********************************/**********
+/****************************************/
 /*************GESTIÓN DEL PATH / PROCESOS************************/
 
 void AniadirAlPath(char *dir)
@@ -70,20 +69,21 @@ void Cmd_prompt(char * arg[]){
 
     // No se le pasa nuevo prompt.
     if (arg[0] == NULL) {
-        printf("->  --->  ->");
+        printf("->  --->  ->\n");
         return;
-    
+
+    }
     // Se le pasa un prompt:
     char cad[MAXPROMPT];
-    }else if(arg[0][0] == '%'){                           // Prompts especiales:
-        struct passwd pw = getpwuid(getuid());            // Usamos llamadas al sistema para obtener datos del usuario
+    if(arg[0][0] == '%'){                                  // Prompts especiales:
+        struct passwd *pw = getpwuid(getuid());            // Usamos llamadas al sistema para obtener datos del usuario
                 if(!pw){
                     perror("No se pudo obtener el nombre de usuario");
                     return;
                 }
         switch(arg[0][1]){
             case 'u':
-                strncpy(cad, pw.pw_name, MAXPROMPT - 2);
+                strncpy(cad, pw->pw_name, MAXPROMPT - 2);
                 break;
 
             case 'p':
@@ -102,8 +102,8 @@ void Cmd_prompt(char * arg[]){
                     perror("Error al obtener el directorio");
                     return;
                 }
-                char *cad2 = strstr(cad, pw.pw_name);                // Redefinimos cad desde la primera vez que aparece nombre usuario (= directorio personal)
-                strcpy(cad, strcat("~", cad2 + strlen(pw.pw_name))); // Sustituimos el directorio personal por '~'         
+                char *cad2 = strstr(cad, pw->pw_name);                // Redefinimos cad desde la primera vez que aparece nombre usuario (= directorio personal)
+                strcpy(cad, strcat("~", cad2 + strlen(pw->pw_name))); // Sustituimos el directorio personal por '~'         
                 break;
 
             case 'B':
@@ -112,8 +112,8 @@ void Cmd_prompt(char * arg[]){
                     perror("Error al obtener el directorio");
                     return;
                 }
-                char *cad2 = strrchr(cad, '/');
-                strcpy(cad, cad2 + 1);                               // Redefinimos cad como la última vez que aparece '/' en el cad anterior (sin '/')
+                char *cad3 = strrchr(cad, '/');
+                strcpy(cad, cad3 + 1);                               // Redefinimos cad como la última vez que aparece '/' en el cad anterior (sin '/')
                 break;
 
             case 'm':
@@ -140,7 +140,7 @@ void Cmd_prompt(char * arg[]){
                 break;
 
             case '%':
-                strcpy(cad, "%%");
+                strcpy(cad, "%");
                 break;
 
             case 'b':
@@ -148,12 +148,13 @@ void Cmd_prompt(char * arg[]){
                 break;
 
             default:
-                perror("Error al generar el prompt, se mantiene el antiguo");
+                printf("Error al generar el prompt, se mantiene el antiguo\n");
+                return;
         }
 
-    }else strcpy(cad, arg[0]);         // Prompt custom
+    }else strcpy(cad, arg[0]);         // Prompt "custom"
 
-    strcpy(prompt, cad, MAXPROMPT - 2); 
+    strncpy(prompt, cad, MAXPROMPT - 2); 
     prompt[MAXPROMPT - 2] = '\0';
 }
 
@@ -211,23 +212,16 @@ void Cmd_help (char *arg[]){
 
     //Sólo se pasa "help":
     if (arg[0] == NULL){
-        int it;
-        char *flim[2] = {"exit", NULL};
-
-        printf("Comandos disponibles:");
-
-        for (it = 0; it <= 1; it++){
-            printf("\nCmds practica %d: ", it);
-            for (i = 0; strcmp(C[i].nombre, flim[it]) != 0; i++) printf("%s", C[i].nombre);
-        }
-
+        printf("Comandos de la Practica 0: prompt\n");
+        printf("Comandos de la Practica 1: exit bye date pid authors sysinfo help chdir open close listopen dup lseek readstr writestr makefile makedir delete deltree listfile list\n");
+        
         return;
     }
     
     //Vemos de qué comando se trata:
     for (i=0; C[i].nombre != NULL; i++){
         if (!strcmp(C[i].nombre, arg[0])){
-            printf("%s: %s\t%s", C[i].nombre, C[i].arguments, C[i].help);
+            printf("%s: %s\t%s\n", C[i].nombre, C[i].arguments, C[i].help);
             return;
         }
     }

@@ -5,8 +5,10 @@
 static LISTASIMPLE TablaFicheros;
 
 // Función comparativa:
-int CompararDescriptor(const void *p1, const void *p2) {
-    return (const tFicheroAbierto*)p1->df - (const tFicheroAbierto*)p2->df;
+int CompararDescriptor(void *p1, void *p2) {
+    const tFicheroAbierto *f1 = (const tFicheroAbierto *)p1;
+    const tFicheroAbierto *f2 = (const tFicheroAbierto *)p2;
+    return f1->df - f2->df; 
 }
 
 // Conversión mode a texto:
@@ -62,14 +64,9 @@ int AniadirFicheroAbierto(int df, const char *nombre, int mode){
     strcpy(f->nombre, nombre);
     f->mode = mode;
 
-    //Posibles errores:
-    if (f->nombre == NULL) {
+    //Posible error:
+    if (AniadirElemento(TablaFicheros, f) == -1) {
         free(f);
-        return -1;
-    }
-    if (AniadirElemento(&TablaFicheros, f) == -1) {
-        free(nuevo->nombre);
-        free(nuevo);
         return -1;
     }
 
@@ -90,11 +87,10 @@ int EliminarFicheroAbierto(int df){
     tFicheroAbierto *item = (tFicheroAbierto *)GetElementoAtPos(TablaFicheros, p);
     
     // Libera la memoria asignada dinámicamente:
-    free(item->nombre);
     free(item);
 
     // Elimina de la lista:
-    BorrarElementoAtPos(&TablaFicheros, p);
+    BorrarElementoAtPos(TablaFicheros, p);
     return 0;
 }
 
@@ -107,20 +103,20 @@ char * NombreFicheroDescriptor(int df){
     if (p == -1) return NULL;  // Si no lo encuentra
 
     // Si lo encuentra:
-    ItemFichero *item = (tFicheroAbierto *)GetElementoAtPos(TablaFicheros, p);
+    tFicheroAbierto *item = (tFicheroAbierto *)GetElementoAtPos(TablaFicheros, p);
     return item->nombre;
 }
 
 
 void ListarFicherosAbiertos(){
-    tPosicion p = GetPrimerElemento(TablaFicheros);
+
+    tFicheroAbierto *item = (tFicheroAbierto *)GetPrimerElemento(TablaFicheros);
     char textoModo[128];
 
-    while (p != NULL) {
-        tFicheroAbierto *item = (tFicheroAbierto *)GetElementoAtPos(TablaFicheros, p);
+    while (item != NULL) {
         ModoATexto(item->mode, textoModo);
         printf("Descriptor: %d -> %s (%s)\n", item->df, item->nombre, textoModo);
-        p = GetSiguienteElemento(TablaFicheros, p);
+        item = (tFicheroAbierto *)GetSiguienteElemento(TablaFicheros);
     }
 }
 

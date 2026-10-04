@@ -1,5 +1,7 @@
-#include "listasimple.h"
 #include <fcntl.h>    // Manipular descriptores de ficheros.
+#include <string.h>
+
+#include "listasimple.h"
 
 // Definimos el tipo del fichero:
 typedef struct {
@@ -10,7 +12,7 @@ typedef struct {
 
 //OPERACIONES:
 void InicializarTablaFicheros();
-void AnadirFicheroAbierto(int df, const char *nombre, int mode);
-void EliminarFicheroAbierto(int df);
+int AniadirFicheroAbierto(int df, const char *nombre, int mode);
+int EliminarFicheroAbierto(int df);
 char * NombreFicheroDescriptor(int df);
 void ListarFicherosAbiertos();
