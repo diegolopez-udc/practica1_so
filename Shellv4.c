@@ -40,7 +40,11 @@ void ProcesarEntrada(char * entrada)
 
 int  main(int argc, char *argv[], char *ent[])
 {
+   //Definimos entrada
    char entrada[MAXENTRADA];
+
+   //Inicializamos Tabla de Ficheros Abiertos para 0, 1, 2 (entrada/salida/error estandar)
+   InicializarTablaFicheros();
 
    if (argv[1]==NULL)
         printf ("Ejecutando con path vacio: %s -p para importar el path\n",argv[0]);

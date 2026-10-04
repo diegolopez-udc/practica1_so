@@ -2,7 +2,7 @@
 
 
 
-static LISTASIMPLE TablaFicheros;
+static LISTASIMPLE TablaFicheros;    // Aprovechamos listasimple para implementar la tabla de ficheros abiertos
 
 // Función comparativa:
 int CompararDescriptor(void *p1, void *p2) {
@@ -25,6 +25,24 @@ static void ModoATexto(int mode, char *out) {
     if (mode & O_APPEND) strcat(out, " | O_APPEND");
 }
 
+// Conversión texto a modo:
+int TextoAModo(char *tr[], int mode){
+    int i;
+
+    for (i=1; tr[i] != NULL; i++){
+      if (!strcmp(tr[i],"cr")) mode|=O_CREAT;
+      else if (!strcmp(tr[i],"ex")) mode|=O_EXCL;
+      else if (!strcmp(tr[i],"ro")) mode|=O_RDONLY; 
+      else if (!strcmp(tr[i],"wo")) mode|=O_WRONLY;
+      else if (!strcmp(tr[i],"rw")) mode|=O_RDWR;
+      else if (!strcmp(tr[i],"ap")) mode|=O_APPEND;
+      else if (!strcmp(tr[i],"tr")) mode|=O_TRUNC; 
+      else break;
+    }
+
+    return mode;
+}
+
 
 
 //***********************************/**********
@@ -33,30 +51,54 @@ static void ModoATexto(int mode, char *out) {
 
 // Inicializamos la tabla de ficheros con los valores estándar (0, 1, 2):
 void InicializarTablaFicheros() {
-    // ENTRADA ESTÁNDAR (0):
-    tFicheroAbierto *f0 = malloc(sizeof(tFicheroAbierto));       // Asignamos un espacio de memoria al fichero.
-    f0->df = 0;                                                  // Asignamos su descriptor de archivo.
-    strcpy(f0->nombre, "entrada estándar");                      // Asignamos su nombre.
-    f0->mode = O_RDONLY;                                         // Asignamos su modo.
-    AniadirElemento(TablaFicheros, f0);                          // Lo añadimos a la tabla de ficheros.
+    
+    int i;
 
-    // SALIDA ESTÁNDAR (1):
-    tFicheroAbierto *f1 = malloc(sizeof(tFicheroAbierto));
-    f1->df = 1;
-    strcpy(f1->nombre, "salida estándar");
-    f1->mode = O_WRONLY;
-    AniadirElemento(TablaFicheros, f1);
+    // Insertamos los descriptores del 0 al 19 (16 libres):
+    for (i = 0; i < 20; i++) {
+        tFicheroAbierto *f = malloc(sizeof(tFicheroAbierto));    // Asignamos un espacio de memoria al fichero.
+        if (f == NULL) return;
 
-    // ERROR ESTÁNDAR (2):
-    tFicheroAbierto *f2 = malloc(sizeof(tFicheroAbierto));
-    f2->df = 2;
-    strcpy(f2->nombre, "salida de error estándar");
-    f2->mode = O_WRONLY;
-    AniadirElemento(TablaFicheros, f2);
+        f->df = i;                                               // Asignamos su descriptor de archivo.
+
+        if (i == 0) {
+            strcpy(f->nombre, "entrada estandar");               // Asignamos su nombre.
+            f->mode = O_RDWR;                                    // Asignamos su modo.
+        } else if (i == 1) {
+            strcpy(f->nombre, "salida estandar");
+            f->mode = O_RDWR;
+        } else if (i == 2) {
+            strcpy(f->nombre, "error estandar");
+            f->mode = O_RDWR;
+        } else {
+            // Descriptores no usados marcados como libres
+            strcpy(f->nombre, "no usado");
+            f->mode = -1;                                        // -1 indica que esta libre
+        }
+
+        AniadirElemento(TablaFicheros, f);                       // Lo añadimos a la tabla de ficheros.
+    }
 }
 
 // Para añadir cualquier fichero a la tabla:
-int AniadirFicheroAbierto(int df, const char *nombre, int mode){
+int AniadirFicheroAbierto(int df, char *nombre, int mode){
+
+    // Declaramos el numero de descriptor del fichero
+    tFicheroAbierto target;
+    target.df = df;
+
+    // Comprobamos si el descriptor es uno de los 20 de la lista:
+    int pos = BuscarElemento(TablaFicheros, &target, CompararDescriptor);
+
+    // Sobreescribimos descriptor libre:
+    if (pos != -1) {     
+        tFicheroAbierto *f = (tFicheroAbierto *)GetElementoAtPos(TablaFicheros, pos);
+        strcpy(f->nombre, nombre);
+        f->mode = mode;
+        return 0;
+    }
+
+    // Si el descriptor es mayor que 19, creamos un nuevo elemento:
     tFicheroAbierto *f = malloc(sizeof(tFicheroAbierto));
     if (f == NULL) return -1;
 
@@ -115,7 +157,8 @@ void ListarFicherosAbiertos(){
 
     while (item != NULL) {
         ModoATexto(item->mode, textoModo);
-        printf("Descriptor: %d -> %s (%s)\n", item->df, item->nombre, textoModo);
+        if(strstr(textoModo, "UNKNOWN") != NULL) strcpy(textoModo, "");
+        printf("Descriptor: %d, offset: (  ) -> %s %s\n", item->df, item->nombre, textoModo);
         item = (tFicheroAbierto *)GetSiguienteElemento(TablaFicheros);
     }
 }

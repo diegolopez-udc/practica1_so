@@ -61,7 +61,6 @@ void Proceso (char *tr[], int splano)
     waitpid(pid,NULL,0);
 }
 
-
 /*********************************************/
 /*************COMANDOS DEL SHELL************************/
 
@@ -98,13 +97,21 @@ void Cmd_prompt(char * arg[]){
                 break;
 
             case 'D':
-                if (getcwd(cad, sizeof(cad)) == NULL){
+                char dir_actual[MAXPROMPT];
+                if (getcwd(dir_actual, sizeof(dir_actual)) == NULL) {
                     perror("Error al obtener el directorio");
                     return;
                 }
-                char *cad2 = strstr(cad, pw->pw_name);                // Redefinimos cad desde la primera vez que aparece nombre usuario (= directorio personal)
-                strcpy(cad, strcat("~", cad2 + strlen(pw->pw_name))); // Sustituimos el directorio personal por '~'         
+                
+                size_t len_home = strlen(pw->pw_dir);
+                // Si el directorio actual empieza por la ruta de pw_dir (/home/usuario)
+                if (strncmp(dir_actual, pw->pw_dir, len_home) == 0) {
+                    snprintf(cad, sizeof(cad), "~%s", dir_actual + len_home);
+                } else {
+                    strncpy(cad, dir_actual, sizeof(cad) - 1);
+                }
                 break;
+
 
             case 'B':
                 
@@ -210,7 +217,7 @@ void Cmd_help (char *arg[]){
 
     int i;
 
-    //Sólo se pasa "help":
+    //Solo se pasa "help":
     if (arg[0] == NULL){
         printf("Comandos de la Practica 0: prompt\n");
         printf("Comandos de la Practica 1: exit bye date pid authors sysinfo help chdir open close listopen dup lseek readstr writestr makefile makedir delete deltree listfile list\n");
@@ -218,7 +225,7 @@ void Cmd_help (char *arg[]){
         return;
     }
     
-    //Vemos de qué comando se trata:
+    //Vemos de que comando se trata:
     for (i=0; C[i].nombre != NULL; i++){
         if (!strcmp(C[i].nombre, arg[0])){
             printf("%s: %s\t%s\n", C[i].nombre, C[i].arguments, C[i].help);
@@ -239,7 +246,7 @@ void Cmd_sysinfo (char *arg[]){
         return;
     }
 
-    // Impresión de campos de info:
+    // Impresion de campos de info:
     printf("%s %s %s %s %s\n", info.sysname, info.nodename, info.release, info.version, info.machine);
 
 }
@@ -252,31 +259,24 @@ void Cmd_chdir (char * arg[])
       perror("Imposible cambiar directorio");
 }
 
-void Cmd_open(char * arg[]){/*
+void Cmd_open(char * arg[]){
+    int df;
+    int mode = 0;
     
-    int i,df, mode=0;
-    
-    if (tr[0]==NULL) { /*no hay parametro*//*
-       ..............ListarFicherosAbiertos...............
+    // Solo se pasa "open":
+    if (arg[0]==NULL) {
+        Cmd_listopen(arg);
         return;
     }
-    for (i=1; tr[i]!=NULL; i++)
-      if (!strcmp(tr[i],"cr")) mode|=O_CREAT;
-      else if (!strcmp(tr[i],"ex")) mode|=O_EXCL;
-      else if (!strcmp(tr[i],"ro")) mode|=O_RDONLY; 
-      else if (!strcmp(tr[i],"wo")) mode|=O_WRONLY;
-      else if (!strcmp(tr[i],"rw")) mode|=O_RDWR;
-      else if (!strcmp(tr[i],"ap")) mode|=O_APPEND;
-      else if (!strcmp(tr[i],"tr")) mode|=O_TRUNC; 
-      else break;
-      
-    if ((df=open(tr[0],mode,0777))==-1)
+    
+    mode = TextoAModo(arg, mode);    // Convertimos a modos los parametros pasados
+    
+    if ((df=open(arg[0],mode,0777))==-1)
         perror ("Imposible abrir fichero");
     else{
-        ...........AnadirAFicherosAbiertos (descriptor...modo...nombre....)....
-        printf ("Anadida entrada a la tabla ficheros abiertos..................",......);
-    
-*/
+        if(AniadirFicheroAbierto(df, arg[0], mode) == -1) perror("Error al añadir el fichero a la lista de Ficheros Abiertos\n");
+        else printf ("Anadida entrada %d a la tabla ficheros abiertos\n", df);
+    }
 }
 
 void Cmd_close (char * arg[]){/*
@@ -295,10 +295,12 @@ void Cmd_close (char * arg[]){/*
 */
 }
 
-void Cmd_listopen (char * arg[]);
+void Cmd_listopen (char * arg[]){
+    ListarFicherosAbiertos();
+}
 
 void Cmd_dup (char *arg[]){/*
-    int df, duplicado;
+    int df, duplicado;  
     char aux[MAXNAME],*p;
     
     if (tr[0]==NULL || (df=atoi(tr[0]))<0) { /*no hay parametro*//*
@@ -323,7 +325,7 @@ void Cmd_deltree (char *args[]);
 void Cmd_listfile (char *args[]);
 void Cmd_list (char *args[]);
 
-//comandos que no están en la practica pero son imprescindibles para el funcionamiento:
+//Comandos que no están en la practica pero son imprescindibles para el funcionamiento:
 void Cmd_exec (char *arg[])
 {
   if (execv(Ejecutable(arg[0]),arg)==-1)
