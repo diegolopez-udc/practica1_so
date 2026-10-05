@@ -293,7 +293,7 @@ void Cmd_close (char * arg[]){
     // HACER PARÁMETRO -f !!!
     
     if (close(df)==-1)
-        perror("Imposible cerrar descriptor\n");
+        perror("Imposible cerrar descriptor");
     else
         EliminarFicheroAbierto(df);
 
