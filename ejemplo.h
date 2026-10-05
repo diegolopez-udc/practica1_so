@@ -83,7 +83,7 @@ static struct COMANDO C[]={
    {"pid",Cmd_pid, "[-p]",	"Muestra el pid del shell o de su proceso padre"},
    {"authors",Cmd_autores, "[-n|-l]",	"Muestra los nombres y/o logins de los autores"},
    {"sysinfo",Cmd_sysinfo, "", "Muestra informacion de la maquina donde corre el shell"},
-   {"help",Cmd_help, "[cmd|-lt|-T|-all]",	"Muestra ayuda sobre los comandos\n\t-lt: lista topics de ayuda\n\t-T topic: lista comandos sobre ese topic\n\tcmd: info sobre el comando cmd\n\t-all: lista todos los topics con sus comandos"},
+   {"help",Cmd_help, "[cmd]",	"Muestra ayuda sobre los comandos"},
    {"chdir",Cmd_chdir, "[dir]", "Cambia (o muestra) el directorio actual del shell"},
    {"open",Cmd_open, "fich m1 m2...", "Abre el fichero fich\n\ty lo anade a la lista de ficheros abiertos del shell\n\tm1, m2..es el modo de apertura (or bit a bit de los siguientes)\n\tcr: O_CREAT\tap: O_APPEND\n\tex: O_EXCL\tro: O_RDONLY\n\trw: O_RDWR\two: O_WRONLY\n\ttr: O_TRUNC"},
    {"close",Cmd_close, "[-f]", "Cierra el descriptor df y lo elimina de la lista de ficheros abiertos\n\t-f: cierra el descriptor aunque corresponada a un mapeo activo"},
