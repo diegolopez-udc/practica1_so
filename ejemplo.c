@@ -234,7 +234,7 @@ void Cmd_help (char *arg[]){
     }
     
     // Si no lo ha encontrado:
-    printf("%s: no encontrado", arg[0]);
+    printf("%s: no encontrado\n", arg[0]);
 
 }
 
@@ -265,11 +265,11 @@ void Cmd_open(char * arg[]){
     
     // Solo se pasa "open":
     if (arg[0]==NULL) {
-        Cmd_listopen(arg);
+        ListarFicherosAbiertos();
         return;
     }
     
-    mode = TextoAModo(arg, mode);    // Convertimos a modos los parametros pasados
+    mode = TextoAModo(arg + 1, mode);    // Convertimos a modos los parametros pasados
     
     if ((df=open(arg[0],mode,0777))==-1)
         perror ("Imposible abrir fichero");
@@ -279,20 +279,25 @@ void Cmd_open(char * arg[]){
     }
 }
 
-void Cmd_close (char * arg[]){/*
+void Cmd_close (char * arg[]){
     int df;
     
-    if (tr[0]==NULL || (df=atoi(tr[0]))<0) { /*no hay parametro*//*
-      ..............ListarFicherosAbiertos............... *//*o el descriptor es menor que 0*//*
+    // Si sólo se pasa "close" o el descriptor es menor que 0:
+    if (arg[0]==NULL || (df=atoi(arg[0]))<0) { 
+        ListarFicherosAbiertos(); 
         return;
     }
 
+
+
+    // HACER PARÁMETRO -f !!!
     
     if (close(df)==-1)
-        perror("Inposible cerrar descriptor");
+        perror("Imposible cerrar descriptor\n");
     else
-       ........EliminarDeFicherosAbiertos......
-*/
+        EliminarFicheroAbierto(df);
+
+
 }
 
 void Cmd_listopen (char * arg[]){

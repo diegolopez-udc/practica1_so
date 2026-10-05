@@ -19,17 +19,17 @@ static void ModoATexto(int mode, char *out) {
     else if (acc == O_RDWR) strcpy(out, "O_RDWR");
     else strcpy(out, "UNKNOWN");
 
-    if (mode & O_CREAT) strcat(out, " | O_CREAT");
-    if (mode & O_EXCL)  strcat(out, " | O_EXCL");
-    if (mode & O_TRUNC) strcat(out, " | O_TRUNC");
-    if (mode & O_APPEND) strcat(out, " | O_APPEND");
+    if (mode & O_CREAT) strcat(out, " O_CREAT");
+    if (mode & O_EXCL)  strcat(out, " O_EXCL");
+    if (mode & O_TRUNC) strcat(out, " O_TRUNC");
+    if (mode & O_APPEND) strcat(out, " O_APPEND");
 }
 
 // Conversión texto a modo:
 int TextoAModo(char *tr[], int mode){
     int i;
 
-    for (i=1; tr[i] != NULL; i++){
+    for (i=0; tr[i] != NULL; i++){
       if (!strcmp(tr[i],"cr")) mode|=O_CREAT;
       else if (!strcmp(tr[i],"ex")) mode|=O_EXCL;
       else if (!strcmp(tr[i],"ro")) mode|=O_RDONLY; 
@@ -117,22 +117,28 @@ int AniadirFicheroAbierto(int df, char *nombre, int mode){
 
 // Para eliminar cualquier fichero de la tabla:
 int EliminarFicheroAbierto(int df){
+
     //Fichero auxiliar cuyo df es el buscado:
     tFicheroAbierto target;
     target.df = df;
 
     // Busca la posición del elemento en la lista:
     int p = BuscarElemento(TablaFicheros, &target, CompararDescriptor);
-    if (p == -1) return -1; // Si no lo encuentra
+    if (p == -1) return -1;    // Si no lo encuentra
 
-    // Si lo encuentra:
+    //Accedemos al elemento de la lista:
     tFicheroAbierto *item = (tFicheroAbierto *)GetElementoAtPos(TablaFicheros, p);
-    
-    // Libera la memoria asignada dinámicamente:
-    free(item);
 
-    // Elimina de la lista:
-    BorrarElementoAtPos(TablaFicheros, p);
+    // Si es uno de los primeros 20 descriptores (0-19), simplemente se marca el descriptor como libre:
+    if (df < 20) {
+        strcpy(item->nombre, "no usado");
+        item->mode = -1;
+    
+    // Si el descriptor es mayor o igual a 20, si que se elimina directamente de la lista:
+    } else {
+        BorrarElementoAtPos(TablaFicheros, p);
+    }
+
     return 0;
 }
 
