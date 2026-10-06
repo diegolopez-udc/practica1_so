@@ -144,6 +144,7 @@ int EliminarFicheroAbierto(int df){
     return 0;
 }
 
+// En base a un descriptor pasa su nombre:
 char * NombreFicheroDescriptor(int df){
     //Fichero auxiliar cuyo df es el buscado:
     tFicheroAbierto target;
@@ -157,6 +158,7 @@ char * NombreFicheroDescriptor(int df){
     return item->nombre;
 }
 
+// En base a un descriptor pasa un modo:
 int ModoFicheroDescriptor(int df){
     tFicheroAbierto target;
     target.df = df;
@@ -168,17 +170,22 @@ int ModoFicheroDescriptor(int df){
     return item->mode;
 }
 
-
-void ListarFicherosAbiertos(){
-
-    tFicheroAbierto *item = (tFicheroAbierto *)GetPrimerElemento(TablaFicheros);
+// Función auxiliar que imprime un unico elemento de la lista:
+static void ImprimirFichero(void *p) {
+    tFicheroAbierto *f = (tFicheroAbierto *)p;   // Declaramos p como TFicheroAbierto
     char textoModo[128];
 
-    while (item != NULL) {
-        ModoATexto(item->mode, textoModo);
-        if(strstr(textoModo, "UNKNOWN") != NULL) strcpy(textoModo, "");
-        printf("Descriptor: %d, offset: (  ) -> %s %s\n", item->df, item->nombre, textoModo);
-        item = (tFicheroAbierto *)GetSiguienteElemento(TablaFicheros);
+    ModoATexto(f->mode, textoModo);
+    if (strstr(textoModo, "UNKNOWN") != NULL){
+        strcpy(textoModo, "");
     }
+    off_t offset = lseek(f->df, 0, SEEK_CUR);
+    if (offset == -1) printf("Descriptor: %d, offset: ( ) -> %s %s\n", f->df, f->nombre, textoModo);
+    else printf("Descriptor: %d, offset: (%ld) -> %s %s\n", f->df, offset, f->nombre, textoModo);
+    
 }
 
+// Lista la tabla de ficheros abiertos:
+void ListarFicherosAbiertos(){
+    ImprimirListaCompleta(TablaFicheros, 0, ImprimirFichero);
+}

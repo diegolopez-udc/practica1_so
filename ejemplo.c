@@ -269,7 +269,8 @@ void Cmd_open(char * arg[]){
         return;
     }
     
-    mode = TextoAModo(arg + 1, mode);    // Convertimos a modos los parametros pasados
+    // Convertimos a modos los parametros pasados:
+    mode = TextoAModo(arg + 1, mode);
     
     if ((df=open(arg[0],mode,0777))==-1)
         perror ("Imposible abrir fichero");
@@ -289,7 +290,7 @@ void Cmd_close (char * arg[]){
     }
 
 
-    // HACER PARÁMETRO -f !!! == practica 2
+    // HACER PARAMETRO -f !!! ==> Practica 2
 
     if (close(df)==-1)
         perror("Imposible cerrar descriptor");
@@ -328,7 +329,46 @@ void Cmd_dup (char *arg[]){
 
 }
 
-void Cmd_lseek (char *args[]);
+void Cmd_lseek (char *args[]){
+    int df;
+
+    // Falta de parámetros:
+    if (args[0] == NULL || args[1] == NULL || args[2] == NULL || (df=atoi(args[0])) < 0) {
+        printf("Parametros incorrectos\n");
+        return;
+    }
+
+    // Inicializamos variables de offset y referencia:
+    off_t pos = (off_t) atol(args[1]);
+    int ref;
+
+    // Codificamos la referencia en una mascara:
+    if (!strcmp(args[2], "SEEK_SET")) {
+        ref = SEEK_SET;
+    } else if (!strcmp(args[2], "SEEK_CUR")) {
+        ref = SEEK_CUR;
+    } else if (!strcmp(args[2], "SEEK_END")) {
+        ref = SEEK_END;
+    }else{   // lseek() permite la referencia como número (0, 1, 2)
+        ref = atoi(args[2]);
+        // Casos anomalos los acotamos a SEEK_SET
+        if (ref < 0 || ref > 2) ref = 0;
+    }
+
+    // Llamada al sistema:
+    off_t new_offset = lseek(df, pos, ref);
+
+    // Impresión de resultados:
+    if (new_offset == -1){
+        char mensaje_error[256];
+        sprintf(mensaje_error, "Error al intentar posicionar el descriptor %d en el offset %ld", df, pos);
+        perror(mensaje_error);
+    }else 
+        printf("Descriptor %d posicionado en %ld\n", df, pos);
+
+
+}
+
 void Cmd_readstr (char *args[]);
 void Cmd_writestr (char *args[]);
 void Cmd_makefile (char *args[]);

@@ -1,5 +1,7 @@
 #include <fcntl.h>    // Manipular descriptores de ficheros.
 #include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "listasimple.h"
 
