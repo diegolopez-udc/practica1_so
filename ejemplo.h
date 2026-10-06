@@ -93,9 +93,9 @@ static struct COMANDO C[]={
    /*{"readstr",Cmd_readstr},
    {"writestr",Cmd_writestr},
    {"makefile",Cmd_makefile},
-   {"makedir",Cmd_makedir},
-   {"delete",Cmd_delete},
-   {"deltree",Cmd_deltree},
+   {"makedir",Cmd_makedir},*/
+   {"delete",Cmd_delete, "[name1 name2 ..]",	"Borra ficheros o directorios vacios"},
+   /*{"deltree",Cmd_deltree},
    {"listfile",Cmd_listfile},
    {"list",Cmd_list},*/
    {NULL,NULL, NULL, NULL},

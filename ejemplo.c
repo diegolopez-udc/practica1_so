@@ -373,7 +373,55 @@ void Cmd_readstr (char *args[]);
 void Cmd_writestr (char *args[]);
 void Cmd_makefile (char *args[]);
 void Cmd_makedir (char *args[]);
-void Cmd_delete (char *args[]);
+
+
+void Cmd_delete (char *args[]){
+    int i;
+
+    // Para saber el directorio actual:
+    char cadena[1024];
+    if (getcwd(cadena, sizeof(cadena)) == NULL) // Si no puede acceder, sale de la funcion.
+        return;
+    char *diractual = strrchr(cadena, '/');
+
+    // Se pasa solo "delete":
+    if (args[0] == NULL) {
+        printf("%s\n", diractual);
+        return;
+    }
+
+    // Recorre los ficheros/directorios pasados:
+    for (i = 0; args[i] != NULL; i++){
+        struct stat st;
+
+        //Examina el fichero/directorio:
+        if (lstat(args[i], &st) == -1) {       // El elemento no existe o no hay permisos
+            char mensaje_error[256];
+            sprintf(mensaje_error, "Imposible borrar %s", args[i]);
+            perror(mensaje_error);
+            continue;
+
+        } else {
+            if (S_ISDIR(st.st_mode)) {         // Es un directorio
+                if (rmdir(args[i]) == -1){     // Si no esta vacio / error de borrado:
+                    char mensaje_error[256];
+                    sprintf(mensaje_error, "Imposible borrar %s", args[i]);
+                    perror(mensaje_error);
+                    continue;
+                }
+
+            } else {                           // Es un fichero normal
+                if (unlink(args[i]) == -1){    // Error de borrado: Aunque el fichero exista, puede dar error la llamada unlink().
+                    char mensaje_error[256];
+                    sprintf(mensaje_error, "Imposible borrar %s", args[i]);
+                    perror(mensaje_error);
+                    continue;
+                }
+            }
+        }
+    }
+}
+
 void Cmd_deltree (char *args[]);
 void Cmd_listfile (char *args[]);
 void Cmd_list (char *args[]);

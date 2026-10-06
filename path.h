@@ -1,9 +1,9 @@
 #ifndef PATH_H
 #define PATH_H
 
-#include "listasimple.h"
 #include <string.h>
 #include <sys/stat.h>
+#include "listasimple.h"
 
 /*el PATH lo guardo como una lista simple de dirs*/
 
