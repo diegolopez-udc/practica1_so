@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -g -Wall
 
-shell: Shellv4.c ejemplo.o path.o listasimple.o
+shell: Shellv4.c ejemplo.o files.o path.o listasimple.o
 	$(CC) -o shell $(CFLAGS) Shellv4.c  ejemplo.o files.o path.o listasimple.o
 
 ejemplo.o: ejemplo.c ejemplo.h path.h

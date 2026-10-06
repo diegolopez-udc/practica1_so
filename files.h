@@ -20,4 +20,5 @@ void InicializarTablaFicheros();
 int AniadirFicheroAbierto(int df, char *nombre, int mode);
 int EliminarFicheroAbierto(int df);
 char * NombreFicheroDescriptor(int df);
+int ModoFicheroDescriptor(int df);
 void ListarFicherosAbiertos();

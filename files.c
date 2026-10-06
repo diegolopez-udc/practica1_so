@@ -52,7 +52,7 @@ int TextoAModo(char *tr[], int mode){
 // Inicializamos la tabla de ficheros con los valores estándar (0, 1, 2):
 void InicializarTablaFicheros() {
     
-    int i;
+    int i, modo_real;
 
     // Insertamos los descriptores del 0 al 19 (16 libres):
     for (i = 0; i < 20; i++) {
@@ -60,20 +60,22 @@ void InicializarTablaFicheros() {
         if (f == NULL) return;
 
         f->df = i;                                               // Asignamos su descriptor de archivo.
+        modo_real = fcntl(i, F_GETFL);                           // Preguntamos al SO si existe
 
-        if (i == 0) {
-            strcpy(f->nombre, "entrada estandar");               // Asignamos su nombre.
-            f->mode = O_RDWR;                                    // Asignamos su modo.
-        } else if (i == 1) {
-            strcpy(f->nombre, "salida estandar");
-            f->mode = O_RDWR;
-        } else if (i == 2) {
-            strcpy(f->nombre, "error estandar");
-            f->mode = O_RDWR;
+        
+        if (modo_real != -1) {                                   
+
+            if (i == 0) strcpy(f->nombre, "entrada estandar");
+            else if (i == 1) strcpy(f->nombre, "salida estandar");
+            else if (i == 2) strcpy(f->nombre, "error estandar");
+            else strcpy(f->nombre, "desconocido");
+            
+            f->mode = modo_real;
+
         } else {
-            // Descriptores no usados marcados como libres
+
             strcpy(f->nombre, "no usado");
-            f->mode = -1;                                        // -1 indica que esta libre
+            f->mode = -1;                                           // -1 indica que esta libre
         }
 
         AniadirElemento(TablaFicheros, f);                       // Lo añadimos a la tabla de ficheros.
@@ -153,6 +155,17 @@ char * NombreFicheroDescriptor(int df){
     // Si lo encuentra:
     tFicheroAbierto *item = (tFicheroAbierto *)GetElementoAtPos(TablaFicheros, p);
     return item->nombre;
+}
+
+int ModoFicheroDescriptor(int df){
+    tFicheroAbierto target;
+    target.df = df;
+    
+    int p = BuscarElemento(TablaFicheros, &target, CompararDescriptor);
+    if (p == -1) return -1;  
+    
+    tFicheroAbierto *item = (tFicheroAbierto *)GetElementoAtPos(TablaFicheros, p);
+    return item->mode;
 }
 
 

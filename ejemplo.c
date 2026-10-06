@@ -289,9 +289,8 @@ void Cmd_close (char * arg[]){
     }
 
 
+    // HACER PARÁMETRO -f !!! == practica 2
 
-    // HACER PARÁMETRO -f !!!
-    
     if (close(df)==-1)
         perror("Imposible cerrar descriptor");
     else
@@ -304,20 +303,29 @@ void Cmd_listopen (char * arg[]){
     ListarFicherosAbiertos();
 }
 
-void Cmd_dup (char *arg[]){/*
-    int df, duplicado;  
-    char aux[MAXNAME],*p;
+void Cmd_dup (char *arg[]){
+    int df, duplicado, mode;  
+    char aux[MAXNOMBRE],*p;
     
-    if (tr[0]==NULL || (df=atoi(tr[0]))<0) { /*no hay parametro*//*
-        ......ListarFicherosAbiertos........         *//*o el descriptor es menor que 0*//*
+    if (arg[0]==NULL || (df=atoi(arg[0]))<0) { //no hay parametro
+        ListarFicherosAbiertos();         //o el descriptor es menor que 0
         return;
     }
     
- 
-    p=.....NombreFicheroDescriptor(df).......;
-    sprintf (aux,"dup %d (%s)",df, p);
-    .......AnadirAFicherosAbiertos......duplicado......aux.....fcntl(duplicado,F_GETFL).....;
-*/
+    if((duplicado = dup(df)) == -1){
+        perror("Imposible duplicar descriptor");
+        return;
+    }
+    if((p = NombreFicheroDescriptor(df)) == NULL){  //este error en teoria, si está bien implementado el programa no se deberia dar; comprobar al acabar la practica
+        printf("Error: el descriptor %d no existe en la tabla interna.\n", df);
+        return;
+    }
+
+    sprintf(aux,"duplicado de %d (%s)",df, p);
+    mode = ModoFicheroDescriptor(df);
+
+    AniadirFicheroAbierto(duplicado, aux, mode);    
+
 }
 
 void Cmd_lseek (char *args[]);

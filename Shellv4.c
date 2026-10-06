@@ -1,7 +1,7 @@
 #include "ejemplo.h"
 
 //VARIABLES GLOBALES (prompt por defecto):
-char prompt[MAXPROMPT] = "->";
+char prompt[MAXPROMPT] = "-> ";
 
 /**************************OPERACIONES**************************/
 
