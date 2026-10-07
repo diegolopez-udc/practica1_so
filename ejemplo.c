@@ -21,15 +21,14 @@ void EliminarDelPath(char *dir)
         perror("Imposible eliminar");
 }
 
-
 void MostrarDirActual()
 {
    char dir[MAXNOMBRE];
    
-    if (getcwd(dir,MAXNOMBRE)==NULL)
-	perror("Imposible obtener directorio");
+    if (getcwd(dir, sizeof(dir)) == NULL)
+	    perror("Imposible obtener directorio");
     else
-       printf ("%s\n",dir);
+        printf ("%s\n",dir);
 }
 
 int ComprobarSegundoPlano (char *tr[])
@@ -61,6 +60,7 @@ void Proceso (char *tr[], int splano)
     waitpid(pid,NULL,0);
 }
 
+
 /*********************************************/
 /*************COMANDOS DEL SHELL************************/
 
@@ -90,7 +90,7 @@ void Cmd_prompt(char * arg[]){
                 break;
 
             case 'd':
-                if (getcwd(cad, sizeof(cad)) == NULL){               //Asignamos cad a la ruta de dierectorio completa
+                if (getcwd(cad, sizeof(cad)) == NULL){           //Asignamos cad a la ruta de dierectorio completa
                     perror("Error al obtener el directorio");
                     return;
                 }
@@ -106,7 +106,7 @@ void Cmd_prompt(char * arg[]){
                 size_t len_home = strlen(pw->pw_dir);
                 // Si el directorio actual empieza por la ruta de pw_dir (/home/usuario)
                 if (strncmp(dir_actual, pw->pw_dir, len_home) == 0) {
-                    snprintf(cad, sizeof(cad), "~%s", dir_actual + len_home);
+                    snprintf(cad, sizeof(cad), "~%s", dir_actual + len_home);    // Contraemos la ruta
                 } else {
                     strncpy(cad, dir_actual, sizeof(cad) - 1);
                 }
@@ -114,13 +114,13 @@ void Cmd_prompt(char * arg[]){
 
 
             case 'B':
-                
+                char cad2[1024];    // Almacenamos en otro string el directorio actual sin el "/"
                 if (getcwd(cad, sizeof(cad)) == NULL){
                     perror("Error al obtener el directorio");
                     return;
                 }
-                char *cad3 = strrchr(cad, '/');
-                strcpy(cad, cad3 + 1);                               // Redefinimos cad como la última vez que aparece '/' en el cad anterior (sin '/')
+                strcpy(cad2, cad);                         // Redefinimos cad
+                strcpy(cad, strrchr(cad2, '/') + 1);
                 break;
 
             case 'm':
@@ -378,17 +378,9 @@ void Cmd_makedir (char *args[]);
 void Cmd_delete (char *args[]){
     int i;
 
-    // Para saber el directorio actual:
-    char cadena[1024];
-    if (getcwd(cadena, sizeof(cadena)) == NULL) // Si no puede acceder, sale de la funcion.
-        return;
-    char *diractual = strrchr(cadena, '/');
-
-    // Se pasa solo "delete":
-    if (args[0] == NULL) {
-        printf("%s\n", diractual);
-        return;
-    }
+    // Se pasa solo "delete", se muestra el cwd:
+    if (args[0] == NULL)
+        MostrarDirActual();
 
     // Recorre los ficheros/directorios pasados:
     for (i = 0; args[i] != NULL; i++){
@@ -410,7 +402,7 @@ void Cmd_delete (char *args[]){
                     continue;
                 }
 
-            } else {                           // Es un fichero normal
+            } else {                           // Es un fichero normal / enlace
                 if (unlink(args[i]) == -1){    // Error de borrado: Aunque el fichero exista, puede dar error la llamada unlink().
                     char mensaje_error[256];
                     sprintf(mensaje_error, "Imposible borrar %s", args[i]);
@@ -420,9 +412,20 @@ void Cmd_delete (char *args[]){
             }
         }
     }
+
 }
 
-void Cmd_deltree (char *args[]);
+void Cmd_deltree (char *args[]){
+
+
+    // Se pasa solo "deltree", se muestra el cwd:
+    if (args[0] == NULL)
+        MostrarDirActual();
+
+    
+
+
+}
 void Cmd_listfile (char *args[]);
 void Cmd_list (char *args[]);
 
