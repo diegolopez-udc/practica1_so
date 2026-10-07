@@ -369,10 +369,139 @@ void Cmd_lseek (char *args[]){
 
 }
 
-void Cmd_readstr (char *args[]);
-void Cmd_writestr (char *args[]);
-void Cmd_makefile (char *args[]);
-void Cmd_makedir (char *args[]);
+void Cmd_readstr (char *args[]){
+    int df, cont;
+    ssize_t leidos;
+    char *buffer;
+    char mensaje_error[256];
+    
+
+    if(args[0] == NULL || args[1] == NULL){
+        printf("Parametros incorrectos\n");
+        return;
+    }
+
+    df = atoi(args[0]);
+    cont = atoi(args[1]);
+
+    buffer = malloc(cont+1); //para '\0'
+
+    if(buffer == NULL){
+        printf("Imposible asignar memoria para la lectura\n");
+        return;
+    }
+
+    leidos = read(df, buffer, cont);
+
+    if(leidos == -1){
+        sprintf(mensaje_error,"Error al intentar leer el descriptor %d", df);
+        perror(mensaje_error);
+        return;
+    }else{
+        buffer[leidos] = '\0';
+        printf("Leidos %zd bytes del descriptor %d\n%s\n", leidos, df, buffer);    
+    }
+
+    free(buffer);
+}
+
+
+void Cmd_writestr (char *args[]){
+    int df;
+    ssize_t escritos;
+    size_t total_len = 0;
+    char *buffer;
+    char mensaje_error[256];
+    int i;
+
+    if(args[0] == NULL || args[1] == NULL){
+        printf("Parametros incorrectos\n");
+        return;
+    }
+
+    df = atoi(args[0]);
+
+
+    // 2. Calcular la longitud total (sumando la longitud de cada palabra + 1 espacio)
+    for (i = 1; args[i] != NULL; i++) {
+        total_len += strlen(args[i]);
+        if (args[i+1] != NULL) {
+            total_len++; // Añadimos 1 para el espacio separador
+        }
+    }
+
+    // 3. Reservar la memoria exacta
+    buffer = malloc(total_len + 1); // +1 para el '\0'
+    if (buffer == NULL) {
+        return;
+    }
+
+    // 4. Construir la frase completa uniendo los argumentos
+    strcpy(buffer, args[1]); // Copiamos la primera palabra
+    for (i = 2; args[i] != NULL; i++) {
+        strcat(buffer, " ");     // Añadimos el espacio
+        strcat(buffer, args[i]); // Añadimos la siguiente palabra
+    }
+
+    // 5. Llamada de escritura (escribimos total_len bytes, sin el '\0')
+    escritos = write(df, buffer, total_len);
+
+    // 6. Gestionar la salida
+    if (escritos == -1) {
+        // Mantenemos el error tipográfico calcado de la shell de referencia
+        sprintf(mensaje_error, "Error intentar escribir %zu bytes en el descriptor %d", total_len, df);
+        perror(mensaje_error);
+    } else {
+        // TODO: Ajustar este mensaje tras hacer la prueba de éxito en la shell del profesor
+        printf("Escritos %zd bytes en el descriptor %d\n", escritos, df);
+    }
+
+    // 7. Limpiar
+    free(buffer);
+}
+
+
+void Cmd_makefile (char *args[]){
+    int df;
+    char ruta[1024];
+    char mensaje_error[256];
+
+    if((args[0] == NULL)){
+        if(getcwd(ruta, sizeof(ruta)) != NULL){ 
+            printf("%s\n", ruta);
+        }
+        return;
+    }
+
+    if ((df = open(args[0], O_CREAT | O_WRONLY | O_EXCL, 0666)) == -1) {
+        sprintf(mensaje_error, "Imposible crear %s", args[0]); 
+        perror(mensaje_error);
+        return;
+    }
+
+    close(df);
+}
+
+
+void Cmd_makedir (char *args[]){
+    int df;
+    char ruta[1024];
+    char mensaje_error[256];
+
+    if((args[0] == NULL)){
+        if(getcwd(ruta, sizeof(ruta)) != NULL){ 
+            printf("%s\n", ruta);
+        }
+        return;
+    }
+
+    if ((df = mkdir(args[0], 0777)) == -1) {
+        sprintf(mensaje_error, "Imposible crear %s", args[0]); 
+        perror(mensaje_error);
+        return;
+    }
+
+}
 
 
 void Cmd_delete (char *args[]){
