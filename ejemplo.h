@@ -23,7 +23,9 @@
 
 // Tamaños máximos
 #define MAXENTRADA 2048
+#define MAXPATH 1024
 #define MAXPROMPT 128
+#define MAXMERROR 256
 
 //Prompt por defecto:
 extern char prompt[MAXPROMPT];
@@ -90,14 +92,14 @@ static struct COMANDO C[]={
    {"listopen",Cmd_listopen, "[n]", "Lista los ficheros abiertos (al menos n) del shell"},
    {"dup",Cmd_dup, "df","Duplica el descriptor de fichero df\n\ty anade una nueva entrada a la lista ficheros abiertos"},
    {"lseek",Cmd_lseek, "df off ref", "Posiciona el offset en df en off. ref es la referencia:\n\tSEEK_SET principio fichero\n\tSEEK_CUR posicion actual\n\tSEEK_END final del fichero"},
-   /*{"readstr",Cmd_readstr},
-   {"writestr",Cmd_writestr},
-   {"makefile",Cmd_makefile},
-   {"makedir",Cmd_makedir},*/
+   {"readstr",Cmd_readstr, "df cont", "Lee cont bytes del fichero con descriptor df\n\ty los muestra en pantalla"},
+   {"writestr",Cmd_writestr, "df string", "Escribe el string string en el fichero descrito por df"},
+   {"makefile",Cmd_makefile, "[name]",	"Crea un fichero de nombre name"},
+   {"makedir",Cmd_makedir, "[name]", "Crea un directorio de nombre name"},
    {"delete",Cmd_delete, "[name1 name2 ..]",	"Borra ficheros o directorios vacios"},
-   /*{"deltree",Cmd_deltree},
-   {"listfile",Cmd_listfile},
-   {"list",Cmd_list},*/
+   {"deltree",Cmd_deltree, "[name1 name2 ..]", "Borra ficheros o directorios no vacios recursivamente"},
+   {"listfile",Cmd_listfile, "[-long][-link][-acc] name1 name2...", "Lista ficheros.\n\t-long: listado largo\n\t-acc: acesstime\n\t-link: si es enlace simbolico, el path contenido"},
+   {"list",Cmd_list, "[-reca][-recb][-hid][-long][-link][-acc] n1 n2...", "Lista contenidos de directorios\n\t-long: listado largo\n\t-hid: incluye los ficheros ocultos\n\t-recb: recursivo (antes)\n\t-reca: recursivo (despues)\n\t-acc: acesstime\n\t-link: si es enlace simbolico, el path contenido"},
    {NULL,NULL, NULL, NULL},
   };
 
