@@ -45,25 +45,25 @@ int ComprobarSegundoPlano (char *tr[])
 
 void Proceso (char *tr[], int splano)
 {
-   pid_t pid;
-   void Cmd_exec (char **);
-   int background=splano || ComprobarSegundoPlano(tr);
-   if ((pid=fork())==-1){
-        perror ("Imposible crear proceso");
+    pid_t pid;
+    void Cmd_exec (char **);
+    int background=splano || ComprobarSegundoPlano(tr);
+    if ((pid=fork())==-1){
+    perror ("Imposible crear proceso");
         return;
-        }
-  if (pid==0){  /*proceso hijo*/
-    Cmd_exec (tr);
-    exit(255); /*por si falla exec*/
     }
-  if (!background) 
-    waitpid(pid,NULL,0);
+    if (pid==0){  /*proceso hijo*/
+        Cmd_exec (tr);
+        exit(255); /*por si falla exec*/
+    }
+    if (!background) 
+        waitpid(pid,NULL,0);
 }
 
 // Para primera letra del codigo de permisos del fichero:
 char LetraTF (mode_t m)
 {
-     switch (m&S_IFMT) { /*and bit a bit con los bits de formato,0170000 */
+    switch (m&S_IFMT) { /*and bit a bit con los bits de formato,0170000 */
         case S_IFSOCK: return 's'; /*socket */
         case S_IFLNK: return 'l'; /*symbolic link*/
         case S_IFREG: return '-'; /* fichero normal*/
@@ -72,7 +72,7 @@ char LetraTF (mode_t m)
         case S_IFCHR: return 'c'; /*char device*/
         case S_IFIFO: return 'p'; /*pipe*/
         default: return '?'; /*desconocido, no deberia aparecer*/
-     }
+    }
 }
 
 
@@ -103,10 +103,16 @@ char * ConvierteModo (mode_t m, char *permisos)
 
 int EsDirectorio (char * dir)          /*para saber si algo es directorio o no*/
 {
-  struct stat s;
-  if (lstat(dir,&s)==-1)       /*si no puedo acceder: para mi no es directorio*/
+    struct stat s;
+    if (lstat(dir,&s) == -1){          /*si no puedo acceder: para mi no es directorio*/
+        char mensaje_error[MAXMERROR];
+        sprintf(mensaje_error, "Error al acceder a %s", dir);
+        perror(mensaje_error);
+
         return 0;
-  return (S_ISDIR(s.st_mode));
+    }
+
+    return (S_ISDIR(s.st_mode));
 }
 
 // Función auxiliar para imprimir informacion de un fichero / enlace:
@@ -138,7 +144,7 @@ void imprimirElementoList(const char *nombre, const char *path, struct stat *st,
         char permisos[12];
 
         // Impresion:
-        printf("%s %2ld (%8ld) %s %s %s %8ld %s", 
+        printf("%s %2ld (%8ld) %12s %12s %s %8ld %s", 
                buffer_time, st->st_nlink, st->st_ino, 
                user_name, gr_name, ConvierteModo(st->st_mode, permisos),
                st->st_size, nombre);
@@ -162,14 +168,22 @@ void imprimirElementoList(const char *nombre, const char *path, struct stat *st,
     if (link && S_ISLNK(st->st_mode)) {
         char buffer_link[MAXNOMBRE];      // Buffer donde se guarda el nombre del fichero al que se enlaza
         ssize_t len;                      // Longitud del buffer
+        char res_path[MAXPATH];           // Ruta absoluta del destino del enlace 
 
-        // Llamada readlink() para averiguar destino del soft link:
-        if ((len = readlink(path, buffer_link, sizeof(buffer_link) - 1)) == -1) {
-            perror("Error al leer destino del enlace simbolico");
+        if ( (len = readlink(path, buffer_link, sizeof(buffer_link) - 1)) == -1) {
+            perror("Error al leer el destino del enlace simbolico");   
 
         } else {
             buffer_link[len] = '\0';      // readlink() no añade el '\0' al final del string !
-            printf(" -> %s\n", buffer_link);
+
+            // Llamada realpath() para resolver la ruta canónica absoluta del destino del enlace:
+            if (realpath(path, res_path) != NULL) {
+                // Muestra la ruta absoluta del fichero destino
+                printf(" -> %s\n", res_path);
+            } else {
+                // Si el enlace está roto (apunta a un archivo inexistente), mostramos lo que leímos
+                printf(" -> %s\n", buffer_link);
+            }
         }
 
     } else
@@ -183,14 +197,14 @@ void imprimirElementoList(const char *nombre, const char *path, struct stat *st,
 // Borrado recursivo:
 void delRec(char * arg){
 
-    if (!EsDirectorio(arg)) {         // NO es un directorio (Caso base)
-                if (unlink(arg) == -1){         // Error de borrado: Aunque el fichero exista, puede dar error la llamada unlink().
-                    char mensaje_error[MAXMERROR];
-                    sprintf(mensaje_error, "Imposible borrar %s", arg);
-                    perror(mensaje_error);
-                }
+    if (!EsDirectorio(arg)) {           // NO es un directorio (Caso base)
+        if (unlink(arg) == -1){         // Error de borrado: Aunque el fichero exista, puede dar error la llamada unlink().
+        char mensaje_error[MAXMERROR];
+        sprintf(mensaje_error, "Imposible borrar %s", arg);
+        perror(mensaje_error);
+        }
 
-    }else {                           // ES UN DIRECTORIO
+    }else {                            // ES UN DIRECTORIO
         DIR *direcc = opendir(arg);
         if (direcc == NULL){           // Si no es capaz de abrir la ruta del directorio:
             char mensaje_error[MAXMERROR];
@@ -203,16 +217,17 @@ void delRec(char * arg){
         struct dirent *cont;
         while ((cont = readdir(direcc)) != NULL){     // readdir() lee el elemento actual del contenido de direcc y pasa al siguiente
             // Omitimos el directorio actual y el padre:
-                if (!strcmp(cont->d_name, ".") || !strcmp(cont->d_name, ".."))
-                    continue;
-                //Ponemos la ruta completa:
-                char ruta[MAXPATH];
-                sprintf(ruta, "%s/%s", arg, cont->d_name);
-                delRec(ruta);                         // (Caso recursivo)
+            if (!strcmp(cont->d_name, ".") || !strcmp(cont->d_name, ".."))
+                continue;
+            //Ponemos la ruta completa:
+            char ruta[MAXPATH];
+            sprintf(ruta, "%s/%s", arg, cont->d_name);
+            delRec(ruta);                         // (Caso recursivo)
         }
 
         // Cerramos la ruta del directorio:
         closedir(direcc);
+
         // Borramos el directorio ahora vacio:
         if (rmdir(arg) == -1){                        // Error de borrado del directorio:
             char mensaje_error[MAXMERROR];
@@ -222,6 +237,7 @@ void delRec(char * arg){
     }
 }
 
+// Listado recursivo:
 void listarRec(char *path, int reca, int recb, int hid,
                       int lon, int link, int acc){
             
@@ -232,6 +248,7 @@ void listarRec(char *path, int reca, int recb, int hid,
         perror(mensaje_error);
         return;
     }
+
 
     // Con recb, se hace recursion ANTES de la impresion del directorio actual:
     if (recb) {
@@ -263,7 +280,17 @@ void listarRec(char *path, int reca, int recb, int hid,
 
     // IMPRESION DEL DIRECTORIO ACTUAL:
 
-    printf("************%s\n", path);   
+    // Redefinimos path como la ruta absoluta (por si acaso no lo es):
+    char res_path[MAXPATH];                 // Ruta absoluta del destino del enlace
+    if (realpath(path, res_path) == NULL){
+        char mensaje_error[MAXMERROR];
+        sprintf(mensaje_error, "Error al resolver la ruta absoluta para %s", path);
+        perror(mensaje_error);
+        return;
+    }
+
+    // Impresion directorio actual:
+    printf("************%s\n", res_path);
 
     struct dirent *entry;
     while ((entry = readdir(direcc)) != NULL) {      // Volvemos a recorrer el contenido (iterador reiniciado si recb)
@@ -273,8 +300,8 @@ void listarRec(char *path, int reca, int recb, int hid,
             continue;
 
         // Aniade el contenido a la ruta:
-        char ruta[MAXPATH];
-        snprintf(ruta, sizeof(ruta), "%s/%s", path, entry->d_name);
+        char ruta[MAXPATH + 256];
+        sprintf(ruta, "%s/%s", res_path, entry->d_name);
 
         struct stat st;
         if (lstat(ruta, &st) == -1) {
@@ -302,8 +329,8 @@ void listarRec(char *path, int reca, int recb, int hid,
                 continue;
 
             // Aniade el contenido a la ruta:
-            char subruta[MAXPATH];
-            snprintf(subruta, sizeof(subruta), "%s/%s", path, entry->d_name);
+            char subruta[MAXPATH + 256];
+            sprintf(subruta, "%s/%s", res_path, entry->d_name);
 
             struct stat st;
             if (lstat(subruta, &st) == 0 && S_ISDIR(st.st_mode)) {          // Caso recursivo
@@ -425,6 +452,11 @@ void Cmd_prompt(char * arg[]){
 
 void Cmd_fin (char * arg[])  /*todos los cmd_ comparten prototipo*/
 {                            /*reciben los mismos parametros aunque no los usen*/
+
+    // Liberamos la memoria reservada por las listas:
+    VaciarTablaFicherosAbiertos();
+    PathClear();
+
     exit(0);
 }
 
@@ -548,6 +580,11 @@ void Cmd_close (char * arg[]){
         return;
     }
 
+    // Comprobamos si el descriptor existe en nuestra lista interna:
+    if (NombreFicheroDescriptor(df) == NULL){
+        printf("Imposible cerrar descriptor %d: Descriptor no valido\n", df);
+        return;
+    }
 
     // HACER PARAMETRO -f !!! ==> Practica 2
 
@@ -736,7 +773,7 @@ void Cmd_makefile (char *args[]){
     int df;
 
     // Hacemos la llamada open() con flags O_CREAT, O_WRONLY, O_EXCL:
-    if ((df = open(args[0], O_CREAT | O_WRONLY | O_EXCL, 0666)) == -1) {
+    if ((df = open(args[0], O_CREAT | O_WRONLY | O_EXCL, 0777)) == -1){
         char mensaje_error[MAXMERROR];
         sprintf(mensaje_error, "Imposible crear %s", args[0]); 
         perror(mensaje_error);
@@ -759,8 +796,8 @@ void Cmd_makedir (char *args[]){
     int df;
 
     // Llamada al sistema mkdir():
-    if ((df = mkdir(args[0], 0777)) == -1) {
-        char mensaje_error[MAXMERROR];
+    if ((df = mkdir(args[0], 0777)) == -1) {     // Aniadimos permisos de ejecucion porque es un directorio y se deberia
+        char mensaje_error[MAXMERROR];           // poder acceder a el
         sprintf(mensaje_error, "Imposible crear %s", args[0]); 
         perror(mensaje_error);
         return;
@@ -868,14 +905,6 @@ void Cmd_listfile (char *args[]){
 }
 
 
-// Función auxiliar de list que procesa un fichero / directorio:
-void procesarRutaList(char *path, int reca, int recb, int hid, 
-                      int lon, int link, int acc) {
-
-    
-}
-
-
 void Cmd_list(char *args[])
 {
     int recamode = 0, recbmode = 0, hidmode = 0, longmode = 0, linkmode = 0, accmode = 0;
@@ -910,12 +939,14 @@ void Cmd_list(char *args[])
     while (args[i] != NULL) {
         struct stat st;
 
-        //Examina el fichero/directorio pasado:
+        // Examinamos con lstat y comprobamos con S_ISDIR en vez de llamar a EsDirectorio()
+        // porque necesitamos pasar st (si llamasemos a la funcion estamos haciendo lstat 2 veces):
         if (lstat(args[i], &st) == -1) {
             char mensaje_error[MAXMERROR];
-            sprintf(mensaje_error, "Error al acceder a %s", args[i]);
+            sprintf(mensaje_error, "***Error al acceder a %s", args[i]);
             perror(mensaje_error);
-            return;
+            i++;
+            continue;
         }
 
         // Si es un directorio, se usa la funcion para listar recursivamente:
@@ -969,7 +1000,4 @@ void Cmd_importpath (char *arg[])
 {
     PathAddPath();
 }
-
-
-
 

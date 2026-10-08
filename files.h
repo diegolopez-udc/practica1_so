@@ -15,12 +15,13 @@ typedef struct {
 } tFicheroAbierto;
 
 //OPERACIONES:
-static void ModoATexto(int mode, char *out);
+void ModoATexto(int mode, char *out);
 int TextoAModo(char *tr[], int mode);
 
 void InicializarTablaFicheros();
 int AniadirFicheroAbierto(int df, char *nombre, int mode);
 int EliminarFicheroAbierto(int df);
+void VaciarTablaFicherosAbiertos();
 char * NombreFicheroDescriptor(int df);
 int ModoFicheroDescriptor(int df);
 void ListarFicherosAbiertos();

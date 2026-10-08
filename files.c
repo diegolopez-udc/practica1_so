@@ -12,7 +12,7 @@ int CompararDescriptor(void *p1, void *p2) {
 }
 
 // Conversión mode a texto:
-static void ModoATexto(int mode, char *out) {
+void ModoATexto(int mode, char *out) {
     int acc = mode & O_ACCMODE;                        // Hacemos un AND a nivel de bit con la máscara definida en la librería fcntl
     if (acc == O_RDONLY) strcpy(out, "O_RDONLY");
     else if (acc == O_WRONLY) strcpy(out, "O_WRONLY");
@@ -142,6 +142,11 @@ int EliminarFicheroAbierto(int df){
     }
 
     return 0;
+}
+
+// Para vaciar y borrar la tabla:
+void VaciarTablaFicherosAbiertos(){
+    BorrarLista(TablaFicheros);
 }
 
 // En base a un descriptor pasa su nombre:
