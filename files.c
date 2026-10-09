@@ -95,7 +95,8 @@ int AniadirFicheroAbierto(int df, char *nombre, int mode){
     // Sobreescribimos descriptor libre:
     if (pos != -1) {     
         tFicheroAbierto *f = (tFicheroAbierto *)GetElementoAtPos(TablaFicheros, pos);
-        strcpy(f->nombre, nombre);
+        strncpy(f->nombre, nombre, sizeof(f->nombre) - 1);
+        f->nombre[sizeof(f->nombre) - 1] = '\0';
         f->mode = mode;
         return 0;
     }
@@ -105,7 +106,8 @@ int AniadirFicheroAbierto(int df, char *nombre, int mode){
     if (f == NULL) return -1;
 
     f->df = df;
-    strcpy(f->nombre, nombre);
+    strncpy(f->nombre, nombre, sizeof(f->nombre) - 1);
+    f->nombre[sizeof(f->nombre) - 1] = '\0';    
     f->mode = mode;
 
     //Posible error:

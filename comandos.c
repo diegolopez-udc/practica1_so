@@ -106,7 +106,7 @@ int EsDirectorio (char * dir)          /*para saber si algo es directorio o no*/
     struct stat s;
     if (lstat(dir,&s) == -1){          /*si no puedo acceder: para mi no es directorio*/
         char mensaje_error[MAXMERROR];
-        sprintf(mensaje_error, "Error al acceder a %s", dir);
+        snprintf(mensaje_error, sizeof(mensaje_error), "Error al acceder a %s", dir);
         perror(mensaje_error);
 
         return 0;
@@ -200,7 +200,7 @@ void delRec(char * arg){
     if (!EsDirectorio(arg)) {           // NO es un directorio (Caso base)
         if (unlink(arg) == -1){         // Error de borrado: Aunque el fichero exista, puede dar error la llamada unlink().
         char mensaje_error[MAXMERROR];
-        sprintf(mensaje_error, "Imposible borrar %s", arg);
+        snprintf(mensaje_error ,sizeof(mensaje_error), "Imposible borrar %s", arg);
         perror(mensaje_error);
         }
 
@@ -208,7 +208,7 @@ void delRec(char * arg){
         DIR *direcc = opendir(arg);
         if (direcc == NULL){           // Si no es capaz de abrir la ruta del directorio:
             char mensaje_error[MAXMERROR];
-            sprintf(mensaje_error, "Imposible borrar %s", arg);
+            snprintf(mensaje_error, sizeof(mensaje_error), "Imposible borrar %s", arg);
             perror(mensaje_error);
             return;
         }
@@ -221,7 +221,7 @@ void delRec(char * arg){
                 continue;
             //Ponemos la ruta completa:
             char ruta[MAXPATH];
-            sprintf(ruta, "%s/%s", arg, cont->d_name);
+            snprintf(ruta, sizeof(ruta), "%s/%s", arg, cont->d_name);
             delRec(ruta);                         // (Caso recursivo)
         }
 
@@ -231,7 +231,7 @@ void delRec(char * arg){
         // Borramos el directorio ahora vacio:
         if (rmdir(arg) == -1){                        // Error de borrado del directorio:
             char mensaje_error[MAXMERROR];
-            sprintf(mensaje_error, "Imposible borrar %s", arg);
+            snprintf(mensaje_error, sizeof(mensaje_error), "Imposible borrar %s", arg);
             perror(mensaje_error);     
         }
     }
@@ -244,7 +244,7 @@ void listarRec(char *path, int reca, int recb, int hid,
     DIR *direcc = opendir(path);         // Si no es capaz de abrir la ruta del directorio:
     if (direcc == NULL) {
         char mensaje_error[MAXMERROR];
-        sprintf(mensaje_error, "Imposible abrir directorio %s", path);
+        snprintf(mensaje_error, sizeof(mensaje_error), "Imposible abrir directorio %s", path);
         perror(mensaje_error);
         return;
     }
@@ -284,7 +284,7 @@ void listarRec(char *path, int reca, int recb, int hid,
     char res_path[MAXPATH];                 // Ruta absoluta del destino del enlace
     if (realpath(path, res_path) == NULL){
         char mensaje_error[MAXMERROR];
-        sprintf(mensaje_error, "Error al resolver la ruta absoluta para %s", path);
+        snprintf(mensaje_error, sizeof(mensaje_error), "Error al resolver la ruta absoluta para %s", path);
         perror(mensaje_error);
         return;
     }
@@ -301,12 +301,12 @@ void listarRec(char *path, int reca, int recb, int hid,
 
         // Aniade el contenido a la ruta:
         char ruta[MAXPATH + 256];
-        sprintf(ruta, "%s/%s", res_path, entry->d_name);
+        snprintf(ruta, sizeof(ruta), "%s/%s", res_path, entry->d_name);
 
         struct stat st;
         if (lstat(ruta, &st) == -1) {
             char mensaje_error[MAXMERROR];
-            sprintf(mensaje_error, "***Error al acceder a %s", path);
+            snprintf(mensaje_error, sizeof(mensaje_error), "***Error al acceder a %s", path);
             perror(mensaje_error);
             continue;
         }
@@ -330,7 +330,7 @@ void listarRec(char *path, int reca, int recb, int hid,
 
             // Aniade el contenido a la ruta:
             char subruta[MAXPATH + 256];
-            sprintf(subruta, "%s/%s", res_path, entry->d_name);
+            snprintf(subruta, sizeof(subruta), "%s/%s", res_path, entry->d_name);
 
             struct stat st;
             if (lstat(subruta, &st) == 0 && S_ISDIR(st.st_mode)) {          // Caso recursivo
@@ -617,7 +617,7 @@ void Cmd_dup (char *arg[]){
         return;
     }
 
-    sprintf(aux,"duplicado de %d (%s)",df, p);
+    snprintf(aux, sizeof(aux), "duplicado de %d (%s)",df, p);
     mode = ModoFicheroDescriptor(df);
 
     AniadirFicheroAbierto(duplicado, aux, mode);    
@@ -657,7 +657,7 @@ void Cmd_lseek (char *args[]){
     // Impresión de resultados:
     if (new_offset == -1){
         char mensaje_error[MAXMERROR];
-        sprintf(mensaje_error, "Error al intentar posicionar el descriptor %d en el offset %ld", df, pos);
+        snprintf(mensaje_error, sizeof(mensaje_error), "Error al intentar posicionar el descriptor %d en el offset %ld", df, pos);
         perror(mensaje_error);
     }else 
         printf("Descriptor %d posicionado en %ld\n", df, pos);
@@ -700,7 +700,7 @@ void Cmd_readstr (char *args[]){
 
     if(leidos == -1){
         char mensaje_error[MAXMERROR];
-        sprintf(mensaje_error,"Error al intentar leer el descriptor %d", df);
+        snprintf(mensaje_error, sizeof(mensaje_error), "Error al intentar leer el descriptor %d", df);
         perror(mensaje_error);
 
     }else{
@@ -753,7 +753,7 @@ void Cmd_writestr (char *args[]){
     // Salida:
     if (escritos == -1) {
         char mensaje_error[MAXMERROR];
-        sprintf(mensaje_error, "Error intentar escribir %zu bytes en el descriptor %d", total_len, df);
+        snprintf(mensaje_error, sizeof(mensaje_error), "Error intentar escribir %zu bytes en el descriptor %d", total_len, df);
         perror(mensaje_error);
 
     } else {
@@ -778,7 +778,7 @@ void Cmd_makefile (char *args[]){
     // Hacemos la llamada open() con flags O_CREAT, O_WRONLY, O_EXCL:
     if ((df = open(args[0], O_CREAT | O_WRONLY | O_EXCL, 0777)) == -1){
         char mensaje_error[MAXMERROR];
-        sprintf(mensaje_error, "Imposible crear %s", args[0]); 
+        snprintf(mensaje_error, sizeof(mensaje_error), "Imposible crear %s", args[0]); 
         perror(mensaje_error);
         return;
     }
@@ -801,7 +801,7 @@ void Cmd_makedir (char *args[]){
     // Llamada al sistema mkdir():
     if ((df = mkdir(args[0], 0777)) == -1) {     // Aniadimos permisos de ejecucion porque es un directorio y se deberia
         char mensaje_error[MAXMERROR];           // poder acceder a el
-        sprintf(mensaje_error, "Imposible crear %s", args[0]); 
+        snprintf(mensaje_error, sizeof(mensaje_error), "Imposible crear %s", args[0]); 
         perror(mensaje_error);
         return;
     }
@@ -826,7 +826,7 @@ void Cmd_delete (char *args[]){
         if (EsDirectorio(args[i])){
             if (rmdir(args[i]) == -1){          // Si no esta vacio / error de borrado:
                 char mensaje_error[MAXMERROR];
-                sprintf(mensaje_error, "Imposible borrar %s", args[i]);
+                snprintf(mensaje_error, sizeof(mensaje_error), "Imposible borrar %s", args[i]);
                 perror(mensaje_error);
                 continue;
             }
@@ -835,7 +835,7 @@ void Cmd_delete (char *args[]){
         } else {                           
             if (unlink(args[i]) == -1){         // Error de borrado: Aunque el fichero exista, puede dar error la llamada unlink().
                 char mensaje_error[MAXMERROR];
-                sprintf(mensaje_error, "Imposible borrar %s", args[i]);
+                snprintf(mensaje_error, sizeof(mensaje_error), "Imposible borrar %s", args[i]);
                 perror(mensaje_error);
                 continue;
             }
@@ -892,7 +892,7 @@ void Cmd_listfile (char *args[]){
         //Examina el fichero/directorio pasado:
         if (lstat(args[i], &st) == -1) {       // El elemento no existe o no hay permisos
             char mensaje_error[MAXMERROR];
-            sprintf(mensaje_error, "***Error al acceder a %s", args[i]);
+            snprintf(mensaje_error, sizeof(mensaje_error), "***Error al acceder a %s", args[i]);
             perror(mensaje_error);
 
             i++;
@@ -946,7 +946,7 @@ void Cmd_list(char *args[])
         // porque necesitamos pasar st (si llamasemos a la funcion estamos haciendo lstat 2 veces):
         if (lstat(args[i], &st) == -1) {
             char mensaje_error[MAXMERROR];
-            sprintf(mensaje_error, "***Error al acceder a %s", args[i]);
+            snprintf(mensaje_error, sizeof(mensaje_error), "***Error al acceder a %s", args[i]);
             perror(mensaje_error);
             i++;
             continue;
