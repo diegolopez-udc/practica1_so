@@ -45,7 +45,7 @@ void ProcesarEntrada(char * entrada)
 
 /******************PROGRAMA PRINCIPAL*********************/
 
-int  main(int argc, char *argv[])
+int  main(int argc, char *argv[], char *ent[])
 {
    //Definimos entrada
    char entrada[MAXENTRADA];
@@ -53,7 +53,7 @@ int  main(int argc, char *argv[])
    //Inicializamos Tabla de Ficheros Abiertos para 0, 1, 2 (entrada/salida/error estandar)
    InicializarTablaFicheros();
 
-   if (argc < 2)
+   if (argv[1]==NULL)
         printf ("Ejecutando con path vacio: %s -p para importar el path\n",argv[0]);
    else if (!strcmp(argv[1],"-p"))
         Cmd_importpath(NULL);

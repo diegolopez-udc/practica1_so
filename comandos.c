@@ -452,7 +452,6 @@ void Cmd_prompt(char * arg[]){
 
 void Cmd_fin (char * arg[])  /*todos los cmd_ comparten prototipo*/
 {                            /*reciben los mismos parametros aunque no los usen*/
-        (void)arg;
     // Liberamos la memoria reservada por las listas:
     VaciarTablaFicherosAbiertos();
     PathClear();
@@ -530,7 +529,6 @@ void Cmd_help (char *arg[]){
 
 void Cmd_sysinfo (char *arg[]){
     struct utsname info;                                                              // Declaramos un tipo de struct utsname
-    (void)arg;
 
     if (uname(&info) == -1) {                                                         // No se puede acceder a la información del sistema
         perror("Error al obtener la información del sistema (sysinfo)");
@@ -598,7 +596,6 @@ void Cmd_close (char * arg[]){
 }
 
 void Cmd_listopen (char * arg[]){
-    (void)arg;
     ListarFicherosAbiertos();
 }
 
@@ -684,6 +681,11 @@ void Cmd_readstr (char *args[]){
     // Guardamos en variables los argumentos del descriptor y contenido:
     df = atoi(args[0]);
     cont = atoi(args[1]);
+    
+    if (cont < 0) {
+        printf("Parametros incorrectos\n");
+        return;
+    }
 
     buffer = malloc(cont+1); //reservamos +1 de memoria para '\0'
 
@@ -700,7 +702,6 @@ void Cmd_readstr (char *args[]){
         char mensaje_error[MAXMERROR];
         sprintf(mensaje_error,"Error al intentar leer el descriptor %d", df);
         perror(mensaje_error);
-        return;
 
     }else{
         buffer[leidos] = '\0';  // Aniadimos el '\0'
@@ -978,7 +979,6 @@ void Cmd_pplano (char *arg[])
 
 void Cmd_importpath (char *arg[])
 {
-    (void)arg;
     PathAddPath();
 }
 
