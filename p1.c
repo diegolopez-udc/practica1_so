@@ -1,4 +1,11 @@
-#include "ejemplo.h"
+/*
+Autores:                            Login:
+   Diego López López          -        diego.lopez.lopez1@udc.es
+   Bruno García Fariña        -        bruno.gfarina@udc.es
+   Pablo Muradas Santa María  -        pablo.muradas@udc.es
+*/
+
+#include "comandos.h"
 
 //VARIABLES GLOBALES (prompt por defecto):
 char prompt[MAXPROMPT] = "-> ";
@@ -38,7 +45,7 @@ void ProcesarEntrada(char * entrada)
 
 /******************PROGRAMA PRINCIPAL*********************/
 
-int  main(int argc, char *argv[], char *ent[])
+int  main(int argc, char *argv[])
 {
    //Definimos entrada
    char entrada[MAXENTRADA];
@@ -46,14 +53,16 @@ int  main(int argc, char *argv[], char *ent[])
    //Inicializamos Tabla de Ficheros Abiertos para 0, 1, 2 (entrada/salida/error estandar)
    InicializarTablaFicheros();
 
-   if (argv[1]==NULL)
+   if (argc < 2)
         printf ("Ejecutando con path vacio: %s -p para importar el path\n",argv[0]);
    else if (!strcmp(argv[1],"-p"))
         Cmd_importpath(NULL);
 
    while (1){
       printf ("%s", prompt);
-      fgets(entrada,MAXENTRADA,stdin);
+      if (fgets(entrada,MAXENTRADA,stdin)==NULL)
+         break;
       ProcesarEntrada(entrada);
    }
+   VaciarTablaFicherosAbiertos();
 }

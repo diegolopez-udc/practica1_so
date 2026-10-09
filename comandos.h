@@ -1,5 +1,5 @@
-#ifndef EJEMPLO_H
-#define EJEMPLO_H
+#ifndef COMANDOS_H
+#define COMANDOS_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,7 +23,9 @@
 
 // Tamaños máximos
 #define MAXENTRADA 2048
+#define MAXPATH 1024
 #define MAXPROMPT 128
+#define MAXMERROR 256
 
 //Prompt por defecto:
 extern char prompt[MAXPROMPT];
@@ -95,9 +97,9 @@ static struct COMANDO C[]={
    {"makefile",Cmd_makefile, "[name]",	"Crea un fichero de nombre name"},
    {"makedir",Cmd_makedir, "[name]", "Crea un directorio de nombre name"},
    {"delete",Cmd_delete, "[name1 name2 ..]",	"Borra ficheros o directorios vacios"},
-   /*{"deltree",Cmd_deltree},
-   {"listfile",Cmd_listfile},
-   {"list",Cmd_list},*/
+   {"deltree",Cmd_deltree, "[name1 name2 ..]", "Borra ficheros o directorios no vacios recursivamente"},
+   {"listfile",Cmd_listfile, "[-long][-link][-acc] name1 name2...", "Lista ficheros.\n\t-long: listado largo\n\t-acc: acesstime\n\t-link: si es enlace simbolico, el path contenido"},
+   {"list",Cmd_list, "[-reca][-recb][-hid][-long][-link][-acc] n1 n2...", "Lista contenidos de directorios\n\t-long: listado largo\n\t-hid: incluye los ficheros ocultos\n\t-recb: recursivo (antes)\n\t-reca: recursivo (despues)\n\t-acc: acesstime\n\t-link: si es enlace simbolico, el path contenido"},
    {NULL,NULL, NULL, NULL},
   };
 

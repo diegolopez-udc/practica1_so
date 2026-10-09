@@ -1,11 +1,11 @@
 CC = gcc
 CFLAGS = -g -Wall
 
-shell: Shellv4.c ejemplo.o files.o path.o listasimple.o
-	$(CC) -o shell $(CFLAGS) Shellv4.c  ejemplo.o files.o path.o listasimple.o
+p1: p1.c comandos.o files.o path.o listasimple.o
+	$(CC) -o p1 $(CFLAGS) p1.c comandos.o files.o path.o listasimple.o
 
-ejemplo.o: ejemplo.c ejemplo.h path.h
-	$(CC) -c $(CFLAGS) ejemplo.c
+comandos.o: comandos.c comandos.h path.h
+	$(CC) -c $(CFLAGS) comandos.c
 
 path.o: path.c path.h listasimple.h
 	$(CC) -c $(CFLAGS) path.c
@@ -17,4 +17,4 @@ files.o: files.c files.h
 	$(CC) -c $(CFLAGS) files.c
 
 clean:
-	rm shell *.o
+	rm p1 *.o
