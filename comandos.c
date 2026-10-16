@@ -660,7 +660,7 @@ void Cmd_lseek (char *args[]){
         snprintf(mensaje_error, sizeof(mensaje_error), "Error al intentar posicionar el descriptor %d en el offset %ld", df, pos);
         perror(mensaje_error);
     }else 
-        printf("Descriptor %d posicionado en %ld\n", df, pos);
+        printf("Descriptor %d posicionado en %ld\n", df, new_offset);
 
 
 }
