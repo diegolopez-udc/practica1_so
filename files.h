@@ -8,6 +8,7 @@
 
 #include "listasimple.h"
 
+
 // Definimos el tipo del fichero:
 typedef struct {
     int df;             // Descriptor de fichero (p. ej. 3, 4, 5...)

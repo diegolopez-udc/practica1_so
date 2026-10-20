@@ -4,6 +4,7 @@
 
 static LISTASIMPLE TablaFicheros;    // Aprovechamos listasimple para implementar la tabla de ficheros abiertos
 
+
 // Funcion comparativa:
 int CompararDescriptor(void *p1, void *p2) {
     const tFicheroAbierto *f1 = (const tFicheroAbierto *)p1;
