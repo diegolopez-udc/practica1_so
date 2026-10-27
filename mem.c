@@ -3,7 +3,7 @@
 
 static LISTASIMPLE TablaMemoria;    // Aprovechamos listasimple para implementar la lista.
 
-/*
+
 // Conversion tipo a texto:
 void TipoATexto(int type, char *out) {
     switch(type){
@@ -33,7 +33,6 @@ int TextoATipo(char *cad, int type){
 
     return type;
 }
-*/
 
 /* FUNCIONES COMPARADORAS: */
 
@@ -227,26 +226,38 @@ void ImprimirBloqueMemoria(void *p){
     strftime(buffer, sizeof(buffer), "%b %d %H:%M", tm);
 
     // Impresion del bloque:
-    printf("\t0x%ld %12lu %s ", b->addr, (unsigned long)b->size, buffer);
+    printf("\t0x%lx %12lu %s ", b->addr, (unsigned long)b->size, buffer);
     // %lx imprime en hexadecimal y %lu en decimal
     // Casteamos size para evitar posibles warnings
 
     // Impresion adicional:
+    char txt[8];
+    TipoATexto(b->type, txt);
+
     if(b->type == 1)       // Si es SHARED:
-        printf("shared (key %d)\n", b->info.key);
+        printf("%s (key %d)\n", txt, b->info.key);
     else if(b->type == 2)  // Si es MMAP:
         printf("%s (descriptor %d)\n", b->info.mmap.name, b->info.mmap.fd);
-    else if(b->type == 0)  // Si es MALLOC:
-        printf("malloc \n");
-    else                   // Tipo desconocido:
-        printf("unknown \n");
+    else                   // Si es MALLOC o desconocido:
+        printf("%s \n", txt);
+
 }
 
 
 // Imprime la tabla filtrando por tipo o mostrando todos:
+//      - type = {0 (malloc), 1 (shared), 2 (mmap)}
+//      - all = 1 => Se imprimen todos los bloques
 void ImprimirTablaMemoriaFiltrada(int type, int all){
+    char txt[8];
 
-    printf("******Lista de bloques asignados para el proceso %d\n", getpid());
+    // Asignacion de txt;
+    if (all)
+        strcpy(txt, "");
+    else
+        TipoATexto(type, txt);
+
+    // Impresion inicial:
+    printf("******Lista de bloques asignados %s para el proceso %d\n", txt, getpid());
 
     // Si se imprime la lista completa:
     if (all) {

@@ -996,7 +996,7 @@ void Cmd_list(char *args[])
 /***********************************************/
 
 
-// Conversion de cadena a puntero:
+// Conversion de cadena a puntero de void:
 void * CadenatoPointer (char * s)
 {
   void *p;
@@ -1005,119 +1005,196 @@ void * CadenatoPointer (char * s)
 }
 
 
+// Funcion auxiliar para allocate -malloc:
+void do_AllocateMalloc(char *tr[]){
+    size_t tam;
+    void *p;
+
+    // No se le pasa size:
+    if (tr[0] == NULL){
+        ImprimirTablaMemoriaFiltrada(0, 0);  // Imprimimos bloques asignados para malloc
+        return;
+    }
+
+    // Obtenemos el tamanho del bloque de forma numerica:
+    tam = (size_t) strtoul(tr[0], NULL, 10);
+
+    // No se pueden crear bloques de 0 Bytes:
+    if (tam == 0){
+        printf("No se asignan bloques de 0 bytes\n");
+        return;
+    }
+
+    // Hacemos la llamada al sistema malloc():
+    if((p = malloc(tam)) == NULL){
+        perror("Imposible obtener memoria con malloc");
+        return;
+    }
+
+    // Reserva de memoria exitosa:
+    InsertarBloqueMalloc(p, tam);
+    printf ("Asignados %lu bytes en %p\n",(unsigned long) tam, p);
+}
+
+
 // Funcion auxiliar para allocate -createshared / -shared:
-/*
 void * ObtenerMemoriaShmget (key_t clave, size_t tam){
     void * p;
-    int aux,id,flags=0777; // Los 9 bits menos significativos de los flags:permisos
+    int aux,id,flags = 0777;                      // Los 9 bits menos significativos de los flags:permisos
     struct shmid_ds s;
 
-    if (tam)     // IMPORTANTE: tam distito de 0 indica crear
-        flags=flags | IPC_CREAT | IPC_EXCL; // Cuando no es crear pasamos de tamano 0
-    if (clave==IPC_PRIVATE)  // No nos vale
-        {errno=EINVAL; return NULL;}
-    if ((id=shmget(clave, tam, flags))==-1)
-        return (NULL);
-    if ((p=shmat(id,NULL,0))==(void*) -1){
-        aux=errno;
-        if (tam)
-             shmctl(id,IPC_RMID,NULL);
+    if (tam)                                      // IMPORTANTE: tam distito de 0 indica crear
+        flags = flags | IPC_CREAT | IPC_EXCL;     // Cuando no es crear pasamos de tamano 0
+    if (clave == IPC_PRIVATE){                    // No nos vale -> error
+        errno = EINVAL; 
+        return NULL;
+    }
+    if ((id = shmget(clave, tam, flags)) == -1)   // Llamada al sistema para acceder
+        return (NULL);                            // a la memoria compartida
+    if ((p = shmat(id, NULL, 0)) == (void*) -1){  // Adjunta la memoria compartida al espacio de direcciones 
+        aux=errno;                                // de la shell
+        if(tam)
+             shmctl(id, IPC_RMID, NULL);          // Borra el segmento de memoria compartida
         errno=aux;
         return (NULL);
     }
-    shmctl (id,IPC_STAT,&s);   // Si no es crear, necesitamos el tamano, que es s.shm_segsz
-    // Guardar en la lista   InsertarNodoShared (&L, p, s.shm_segsz, clave);
+    shmctl (id, IPC_STAT, &s);                    // Si no es crear, necesitamos el tamano, que es s.shm_segsz
+
+    // Guardar en la lista
+    InsertarBloqueShared(p, tam, clave);
     return (p);
 }
-*/
 
 // Funcion auxiliar para allocate -createshared:
-/*
 void do_AllocateCreateShared (char *tr[]){
     key_t cl;
     size_t tam;
     void *p;
 
     if (tr[0]==NULL || tr[1]==NULL) {
-		ImprimirListaShared(&L);
+		ImprimirTablaMemoriaFiltrada(1, 0);  // Imprimimos la lista solo para los bloques de memoria compartida
 		return;
     }
   
-    cl=(key_t)  strtoul(tr[0],NULL,10);
-    tam=(size_t) strtoul(tr[1],NULL,10);
-    if (tam==0) {
+    // Obtenemos la clave y el tamanho en formato nummerico:
+    cl = (key_t) strtoul(tr[0], NULL, 10);
+    tam = (size_t) strtoul(tr[1], NULL, 10);
+    
+    // No se pueden asignar bloques de 0 Bytes:
+    if (tam == 0) {
 	    printf ("No se asignan bloques de 0 bytes\n");
 	    return;
     }
-    if ((p=ObtenerMemoriaShmget(cl,tam))!=NULL)
+
+    // Hacemos uso de nuestra funcion auxiliar:
+    if ((p = ObtenerMemoriaShmget(cl,tam))!=NULL)
 		printf ("Asignados %lu bytes en %p\n",(unsigned long) tam, p);
     else
 		printf ("Imposible asignar memoria compartida clave %lu:%s\n",(unsigned long) cl,strerror(errno));
+
 }
-*/
 
 // Funcion auxiliar para allocate -shared:
-/*
 void do_AllocateShared (char *tr[]){
     key_t cl;
     void *p;
 
     if (tr[0]==NULL) {
-	    ImprimirListaShared(&L);
+	    ImprimirTablaMemoriaFiltrada(1, 0);  // Imprimimos la lista solo para los bloques de memoria compartida
 		return;
     }
   
-    cl=(key_t)  strtoul(tr[0],NULL,10);
+    // Obtenemos la clave en formato nummerico:
+    cl = (key_t) strtoul(tr[0],NULL,10);
 
-    if ((p=ObtenerMemoriaShmget(cl,0))!=NULL)
+    // Llamamos a la funcion auxiliar previa:
+    if ((p = ObtenerMemoriaShmget(cl,0)) != NULL)
 		printf ("Asignada memoria compartida de clave %lu en %p\n",(unsigned long) cl, p);
     else
-		printf ("Imposible asignar memoria compartida clave %lu:%s\n",(unsigned long) cl,strerror(errno));
+		printf ("Imposible asignar memoria compartida clave %lu: %s\n",(unsigned long) cl, strerror(errno));
 }
-*/
 
 // Funcion de ayuda para do_AllocateMap():
-/*
 void * MapearFichero (char * fichero, int protection){
-    int df, map=MAP_PRIVATE,modo=O_RDONLY;
+    int df, map = MAP_PRIVATE, modo = O_RDONLY;
     struct stat s;
     void *p;
 
-    if (protection&PROT_WRITE)
-          modo=O_RDWR;
-    if (stat(fichero,&s)==-1 || (df=open(fichero, modo))==-1)
+    if (protection & PROT_WRITE)
+          modo = O_RDWR;
+    if (stat(fichero, &s) == -1 || (df = open(fichero, modo)) == -1)
           return NULL;
-    if ((p=mmap (NULL,s.st_size, protection,map,df,0))==MAP_FAILED)
+    if ((p = mmap(NULL, s.st_size, protection, map, df, 0)) == MAP_FAILED)
            return NULL;
-// Guardar en la lista    InsertarNodoMmap (&L,p, s.st_size,df,fichero);
-// Gurdas en la lista de descriptores usados df, fichero
+
+    // Insertamos el bloque de memoria y el fichero que hemos abierto:
+    InsertarBloqueMmap(p, s.st_size, df, fichero);
+    AniadirFicheroAbierto(df, fichero, modo);
     return p;
 }
-*/
 
 
 // Funcion auxiliar para allocate -mmap:
-/*
 void do_AllocateMmap(char *arg[]){ 
     char *perm;
     void *p;
     int protection=0;
      
-    if (arg[0]==NULL)
-            {ImprimirListaMmap(&L); return;}
-    if ((perm=arg[1])!=NULL && strlen(perm)<4) {
-            if (strchr(perm,'r')!=NULL) protection|=PROT_READ;
-            if (strchr(perm,'w')!=NULL) protection|=PROT_WRITE;
-            if (strchr(perm,'x')!=NULL) protection|=PROT_EXEC;
+    if (arg[0]==NULL){
+        ImprimirTablaMemoriaFiltrada(2, 0);   // Imprimimos la lista solo para los bloques de mapeo de ficheros
+        return;
+    
+    }if ((perm = arg[1]) != NULL && strlen(perm) < 4) {
+            if (strchr(perm,'r')!=NULL) protection |= PROT_READ;
+            if (strchr(perm,'w')!=NULL) protection |= PROT_WRITE;
+            if (strchr(perm,'x')!=NULL) protection |= PROT_EXEC;
     }
-    if ((p=MapearFichero(arg[0],protection))==NULL)
+
+    // Llamamos a la funcion auxiliar previa:
+    if ((p = MapearFichero(arg[0], protection))==NULL){
             perror ("Imposible mapear fichero");
-    else
-            printf ("fichero %s mapeado en %p\n", arg[0], p);
+            return;
+    }
+    
+    // Salida exitosa:
+    printf ("fichero %s mapeado en %p\n", arg[0], p);
 }
-*/
 
 void Cmd_allocate(char *args[]){
+
+    // Se pasa solo "allocate", se muestra TODA la lista de bloques de memoria:
+    if (args[0] == NULL){
+        ImprimirTablaMemoriaFiltrada(0, 1);
+        return;
+    }
+
+    // Si no se le pasa un argumento "especial":
+    if ((char) args[0][0] != '-'){
+        printf("uso: allocate [-malloc|-shared|-createshared|-mmap] ....\n");
+        return;
+    }
+
+    // Vemos de que tipo de allocate se trata:
+
+    // Tipo malloc:
+    if (!strcmp(args[0], "-malloc")){
+        do_AllocateMalloc(args + 1);
+    }
+
+    // Tipo createshared:
+    if (!strcmp(args[0], "-createshared")){
+        do_AllocateCreateShared(args + 1);
+    }
+
+    // Tipo shared:
+    if (!strcmp(args[0], "-shared")){
+        do_AllocateShared(args + 1);
+    }
+    
+    // Tipo mmap:
+    if (!strcmp(args[0], "-mmap")){
+        do_AllocateMmap(args + 1);
+    }
 
 }
 
