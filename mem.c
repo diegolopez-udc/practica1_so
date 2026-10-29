@@ -66,7 +66,7 @@ static int CompMmapFile(void *p1, void *p2) {
 
 static int CompMallocSize(void *p1, void *p2) {
     tBloqueMem* a = (tBloqueMem *) p1;
-    size_t size = (size_t) p2;
+    size_t size = *(size_t *) p2;     // BuscarBloqueMallocPorTamanho pasa un puntero al tamanho
 
     if ((a->type == 0) && (a->size == size)) 
         return 0;
@@ -215,31 +215,28 @@ int BorrarBloquePorDireccion(void *addr){
 }
 
 
-// Imprime un bloque individual:
+// Imprime un bloque individual (mismo formato que la shell de referencia):
 void ImprimirBloqueMemoria(void *p){
     tBloqueMem *b = (tBloqueMem *) p;
+    char buffer[100];
+    struct tm *tm;
+
     if(b == NULL) return;
 
     // Calculo de la hora del allocate:
-    struct tm *tm = localtime(&b->time);
-    char buffer[100];
+    tm = localtime(&b->time);
     strftime(buffer, sizeof(buffer), "%b %d %H:%M", tm);
 
-    // Impresion del bloque:
-    printf("\t0x%lx %12lu %s ", b->addr, (unsigned long)b->size, buffer);
-    // %lx imprime en hexadecimal y %lu en decimal
-    // Casteamos size para evitar posibles warnings
+    // Impresion del bloque (direccion, tamanho y hora):
+    printf("%20p %16lu %s ", (void *) b->addr, (unsigned long) b->size, buffer);
 
     // Impresion adicional:
-    char txt[8];
-    TipoATexto(b->type, txt);
-
     if(b->type == 1)       // Si es SHARED:
-        printf("%s (key %d)\n", txt, b->info.key);
+        printf("shared (key %lu)\n", (unsigned long) b->info.key);
     else if(b->type == 2)  // Si es MMAP:
-        printf("%s (descriptor %d)\n", b->info.mmap.name, b->info.mmap.fd);
-    else                   // Si es MALLOC o desconocido:
-        printf("%s \n", txt);
+        printf("%s  (descriptor %d)\n", b->info.mmap.name, b->info.mmap.fd);
+    else                   // Si es MALLOC:
+        printf("malloc\n");
 
 }
 
@@ -248,16 +245,18 @@ void ImprimirBloqueMemoria(void *p){
 //      - type = {0 (malloc), 1 (shared), 2 (mmap)}
 //      - all = 1 => Se imprimen todos los bloques
 void ImprimirTablaMemoriaFiltrada(int type, int all){
-    char txt[8];
+    char txt[16];
 
-    // Asignacion de txt;
+    // Asignacion de txt (con el espacio, para que no salgan dos seguidos si se imprime todo):
     if (all)
         strcpy(txt, "");
-    else
+    else {
         TipoATexto(type, txt);
+        strcat(txt, " ");
+    }
 
     // Impresion inicial:
-    printf("******Lista de bloques asignados %s para el proceso %d\n", txt, getpid());
+    printf("******Lista de bloques asignados %spara el proceso %d\n", txt, getpid());
 
     // Si se imprime la lista completa:
     if (all) {
@@ -279,7 +278,18 @@ void ImprimirTablaMemoriaFiltrada(int type, int all){
 }
 
 
-// Borra la lista:
+// Libera los bloques que siguen asignados y borra la lista (al salir del shell, para valgrind):
 void VaciarTablaMemoria(){
+    int i;
+    tBloqueMem *b;
+
+    for (i = 0; (b = (tBloqueMem *)GetElementoAtPos(TablaMemoria, i)) != NULL; i++) {
+        if (b->type == 0)
+            free((void *) b->addr);
+        else if (b->type == 1)
+            shmdt((void *) b->addr);
+        else if (b->type == 2)
+            munmap((void *) b->addr, b->size);
+    }
     BorrarLista(TablaMemoria);
 }
