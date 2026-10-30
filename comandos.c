@@ -115,7 +115,7 @@ int EsDirectorio (char * dir)          /*para saber si algo es directorio o no*/
     return (S_ISDIR(s.st_mode));
 }
 
-// Función auxiliar para imprimir informacion de un fichero / enlace:
+// Funcion auxiliar para imprimir informacion de un fichero / enlace:
 void imprimirElementoList(const char *nombre, const char *path, struct stat *st, 
                           int lon, int link, int acc) {
                             
@@ -997,7 +997,7 @@ void Cmd_list(char *args[])
 
 
 // Conversion de cadena a puntero de void:
-void * CadenatoPointer (char * s)
+void * CadenatoPointer (char *s)
 {
   void *p;
   sscanf(s,"%p",&p);
@@ -1090,7 +1090,7 @@ void do_AllocateCreateShared (char *tr[]){
     if ((p = ObtenerMemoriaShmget(cl,tam))!=NULL)
 		printf ("Asignados %lu bytes en %p\n",(unsigned long) tam, p);
     else
-		printf ("Imposible asignar memoria compartida clave %lu:%s\n",(unsigned long) cl,strerror(errno));
+		printf ("Imposible asignar memoria compartida clave %lu: %s\n", (unsigned long) cl,strerror(errno));
 
 }
 
@@ -1139,7 +1139,7 @@ void do_AllocateMmap(char *arg[]){
     char *perm;
     void *p;
     int protection=0;
-     
+    
     if (arg[0]==NULL){
         ImprimirTablaMemoriaFiltrada(2, 0);   // Imprimimos la lista solo para los bloques de mapeo de ficheros
         return;
@@ -1179,66 +1179,222 @@ void Cmd_allocate(char *args[]){
     // Tipo malloc:
     if (!strcmp(args[0], "-malloc")){
         do_AllocateMalloc(args + 1);
+        return;
     }
 
     // Tipo createshared:
     if (!strcmp(args[0], "-createshared")){
         do_AllocateCreateShared(args + 1);
+        return;
     }
 
     // Tipo shared:
     if (!strcmp(args[0], "-shared")){
         do_AllocateShared(args + 1);
+        return;
     }
     
     // Tipo mmap:
     if (!strcmp(args[0], "-mmap")){
         do_AllocateMmap(args + 1);
+        return;
     }
+
+}
+
+
+// Funcion auxiliar para deallocate -malloc:
+void do_DeallocateMalloc(size_t siz){
+    tBloqueMem *p;
+
+                                                                // Llamo a la funcion de la lista que busca 
+                                                                // y devuelve la direccion donde
+    if ((p = BuscarBloqueMallocPorTamanho(siz)) == NULL){       // esta el bloque de tamanho siz
+        printf ("No hay bloque de tamano %lu asignado con malloc\n", siz);
+        return;
+    }
+
+    // Liberacion de memoria:
+    free(p->addr);
+
+    // Elimina el nodo de la lista:
+    if (BorrarBloquePorDireccion(p->addr) == -1)
+        printf ("Imposible quitar de lista: %s\n", strerror(errno));
 
 }
 
 
 // Funcion auxiliar para deallocate -shared:
-/*
 void do_DeallocateShared (key_t cl){
-    
-    void *p;                                      // Llamo a la funcion de la lista
-                                                  // que devuelve la direccion donde
-    if ((p=DireccionNodoShared (&L,cl))==NULL){   // Esta la memoria de clave cl
-                printf ("No hay bloque de esa clave mapeado en el proceso\n");
-                return;
+    tBloqueMem *p;  
+                                                             
+                                                                // Llamo a la funcion de la lista que busca 
+                                                                // y devuelve la direccion donde
+    if ((p = BuscarBloqueSharedPorClave(cl)) == NULL){          // esta la memoria compartida de clave cl
+        printf ("No hay bloque de esa clave mapeado en el proceso\n");
+        return;
     }
-    shmdt(p);
-    if (EliminarNodoDireccion (&L,p)==-1)  // Elimino el nodo
-        printf ("Imposible quitar de lista: %s\n",strerror(errno));
+
+    // Desasocia el bloque de memoria compartida del espacio de direcciones virtuales: 
+    shmdt(p->addr);                                             
+
+    // Elimina el nodo de la lista:
+    if (BorrarBloquePorDireccion((void *) p->addr) == -1)
+        printf ("Imposible quitar de lista: %s\n", strerror(errno));
 }
-*/
+
+
+// Funcion auxiliar para deallocate -mmap:
+void do_DeallocateMmap(char *fil){
+    tBloqueMem *p;  
+                                                             
+                                                                 // Llamo a la funcion de la lista que busca 
+                                                                 // y devuelve la direccion donde
+    if ((p = BuscarBloqueMmapPorFichero(fil)) == NULL){          // esta el bloque mapeado de fil
+        printf ("Fichero %s no mapeado\n", fil);
+        return;
+    }
+
+    // Desasocia el bloque mapeado del espacio de direcciones virtuales y cerramos el fichero!: 
+    munmap(p->addr, p->size);                                            
+    if (close(p->info.mmap.fd) == -1)            // Recurrimos close para cerrar el fichero tambien:
+        perror("Imposible cerrar descriptor");
+    else
+        EliminarFicheroAbierto(p->info.mmap.fd);
+
+    // Elimina el nodo de la lista:
+    if (BorrarBloquePorDireccion((void *) p->addr) == -1)
+        printf ("Imposible quitar de lista: %s\n", strerror(errno));
+
+}
 
 
 // Funcion auxiliar para deallocate -delkey:
-/*
 void do_SharedDelkey (char *args[]){
    
     key_t clave;
     int id;
-    char *key=args[0];
+    char *key = args[0];    // Cogemos la clave como string
 
-    if (key==NULL || (clave=(key_t) strtoul(key,NULL,10))==IPC_PRIVATE){
-        printf ("      delkey necesita clave_valida\n");
+    // Si la clave no es valida:
+    if (key == NULL || (clave = (key_t) strtoul(key, NULL, 10)) == IPC_PRIVATE){
+        printf ("\tdelkey necesita clave valida\n");
         return;
     }
-    if ((id=shmget(clave,0,0666))==-1){
+
+    // Si no se puede acceder a la memoria compartida:
+    if ((id = shmget(clave, 0, 0666)) == -1){
         perror ("shmget: imposible obtener memoria compartida");
         return;
     }
-    if (shmctl(id,IPC_RMID,NULL)==-1)
+
+    // Borramos la memoria compartida (el flag de borrado es IPC_RMID)
+    if (shmctl(id, IPC_RMID, NULL) == -1)
         perror ("shmctl: imposible eliminar memoria compartida\n");
 }
-*/
+
+
+// Funcion auxiliar para deallocate {address}
+void do_DelAddr(char *addr){
+    tBloqueMem *p;
+    void *aux = CadenatoPointer(addr);  // Convertimos de cadena a puntero
+                                                             
+    // Comprueba si la direccion se encuentra en la lista de bloques de memoria:
+    if ((p = BuscarBloquePorDireccion(aux)) == NULL){
+        printf ("Direccion 0x%lx no asignada con malloc, shared o mmap\n", (unsigned long) aux);
+        return;
+    }
+
+    // Desasocia el bloque de memoria segun su tipo:
+    switch (p->type){
+        case 0:            // Para malloc:
+            free(p->addr);
+            break;
+        case 1:            // Para shared:
+            shmdt(p->addr); 
+            break;
+        case 2:            // Para mmap:
+            munmap(p->addr, p->size);
+            if (close(p->info.mmap.fd) == -1)            // Recurrimos close para cerrar el fichero tambien:
+                perror("Imposible cerrar descriptor");
+            else
+                EliminarFicheroAbierto(p->info.mmap.fd);
+            break;
+        default:           // Tipo desconocido:
+            printf("Tipo del bloque de la direccion %p no reconocido\n", p->addr);
+            return;
+    }
+
+    // Elimina el nodo de la lista:
+    if (BorrarBloquePorDireccion((void *) p->addr) == -1)
+        printf ("Imposible quitar de lista: %s\n", strerror(errno));
+
+}
 
 
 void Cmd_deallocate(char *args[]){
+
+    // Se pasa solo "deallocate", se muestra TODA la lista de bloques de memoria:
+    if (args[0] == NULL){
+        ImprimirTablaMemoriaFiltrada(0, 1);
+        return;
+    }
+
+    // Vemos de que tipo de allocate se trata:
+
+    // Tipo malloc:
+    if (!strcmp(args[0], "-malloc")){
+        
+        // No se le pasa siz:
+        if (args[1] == NULL){
+            ImprimirTablaMemoriaFiltrada(0, 0);  // Imprimimos bloques asignados para malloc
+            return;
+        }     
+
+        //Conversion de size:
+        size_t siz;
+        siz = (size_t) strtoul(args[1], NULL, 10);
+        do_DeallocateMalloc(siz);
+        return;
+    }
+
+    // Tipo shared:
+    if (!strcmp(args[0], "-shared")){
+
+        // No se le pasa cl:
+        if (args[1] == NULL){
+            ImprimirTablaMemoriaFiltrada(1, 0);  // Imprimimos bloques asignados para shared
+            return;
+        }     
+
+        key_t cl;
+        cl = (key_t) strtoul(args[1], NULL, 10);
+        do_DeallocateShared(cl);
+        return;
+    }
+    
+    // Tipo mmap:
+    if (!strcmp(args[0], "-mmap")){
+
+        // No se le pasa fil:
+        if (args[1] == NULL){
+            ImprimirTablaMemoriaFiltrada(2, 0);  // Imprimimos bloques asignados para mmap
+            return;
+        }     
+
+        do_DeallocateMmap(args[1]);
+        return;
+    }
+
+    // Tipo delkey:
+    if (!strcmp(args[0], "-delkey")){
+        do_SharedDelkey(args + 1);
+        return;
+    }
+
+
+    // Es una direccion:
+    do_DelAddr(args[0]);
 
 }
 
