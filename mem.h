@@ -23,7 +23,7 @@ typedef struct {
 
 // Definimos el tipo del fichero:
 typedef struct {
-    void *addr;           // Direccion del bloque
+    unsigned long addr;   // Direccion del bloque
     size_t size;          // Tamanho del bloque
     time_t time;          // Fecha y hora de asignacion
     int type;             // Tipo de asignacion {0 = MALLOC, 1 = SHARED, 2 = MMAP}

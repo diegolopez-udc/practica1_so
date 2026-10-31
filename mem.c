@@ -40,7 +40,7 @@ static int CompDireccion(void *p1, void *p2) {
     tBloqueMem* a = (tBloqueMem *) p1;
     unsigned long addr = (unsigned long) p2;
 
-    return ((unsigned long) a->addr != addr);
+    return (a->addr != addr);
 }
 
 static int CompSharedKey(void *p1, void *p2) {
@@ -66,7 +66,7 @@ static int CompMmapFile(void *p1, void *p2) {
 
 static int CompMallocSize(void *p1, void *p2) {
     tBloqueMem* a = (tBloqueMem *) p1;
-    size_t size = *(size_t *) p2;
+    size_t size = (size_t) p2;
 
     if ((a->type == 0) && (a->size == size)) 
         return 0;
@@ -92,7 +92,7 @@ static tBloqueMem* CrearBloqueBase(void *addr, size_t size, int type) {
     if (b == NULL) 
         return NULL;
 
-    b->addr = addr;
+    b->addr = (unsigned long) addr;
     b->size = size;
     b->time = time(NULL);           // Coge la hora del sistema a la hora de haber sido creado
     b->type = type;
@@ -153,7 +153,7 @@ tBloqueMem* BuscarBloquePorDireccion(void *addr) {
     // Nos valemos de BuscarElemento de listasimple 
     // y el comparador de direcciones previamente implementado:
     // Hacemos un doble casteo a la direccion pasandolo como numerico y volviendolo a pasar a puntero
-    int pos = BuscarElemento(TablaMemoria, addr, CompDireccion); 
+    int pos = BuscarElemento(TablaMemoria, (void *)(unsigned long)addr, CompDireccion); 
     if (pos == -1) 
         return NULL;
 
@@ -211,7 +211,7 @@ int EsDescriptorMapeado(int fd){
 
 // Borra en base a la direccion del bloque:
 int BorrarBloquePorDireccion(void *addr){
-    return BorrarElemento(TablaMemoria, addr, CompDireccion);
+    return BorrarElemento(TablaMemoria, (void *)(unsigned long)addr, CompDireccion);
 }
 
 
@@ -226,7 +226,7 @@ void ImprimirBloqueMemoria(void *p){
     strftime(buffer, sizeof(buffer), "%b %d %H:%M", tm);
 
     // Impresion del bloque:
-    printf("\t%p %12lu %s ", b->addr, (unsigned long)b->size, buffer);
+    printf("\t0x%lx %12lu %s ", b->addr, (unsigned long)b->size, buffer);
     // %lx imprime en hexadecimal y %lu en decimal
     // Casteamos size para evitar posibles warnings
 
