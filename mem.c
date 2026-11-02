@@ -279,7 +279,17 @@ void ImprimirTablaMemoriaFiltrada(int type, int all){
 }
 
 
-// Borra la lista:
+// Borra la lista y la memoria a la que apuntan las direcciones
 void VaciarTablaMemoria(){
-    BorrarLista(TablaMemoria);
+    tBloqueMem *b;
+    int i;
+
+    for (i = 0; (b = GetElementoAtPos(TablaMemoria, i)) != NULL; i++){
+        switch (b->type){
+            case 0: free(b->addr); break;                // malloc
+            case 1: shmdt(b->addr); break;               // shared
+            case 2: munmap(b->addr, b->size); break;     // mmap
+        }
+    }
+    BorrarLista(TablaMemoria);   // libera los nodos tBloqueMem
 }

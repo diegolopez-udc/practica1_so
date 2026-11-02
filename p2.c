@@ -70,4 +70,5 @@ int  main(int argc, char *argv[], char *ent[])
    // Liberamos la memoria reservada por las listas:
    VaciarTablaFicherosAbiertos();
    VaciarTablaMemoria();
+   PathClear(); // EOF
 }

@@ -118,9 +118,7 @@ static struct COMANDO C[]={
    {"read", Cmd_read, "df addr cont", "Transfiere cont bytes del fichero\n\tdescrito por df a la direccion addr"},
    {"write", Cmd_write, "df addr cont", "Transfiere cont bytes desde la direccion addr\n\tal fichero descrito por df"},
    {"recurse", Cmd_recurse, "[n]", "Invoca a la funcion recursiva n veces"},
-   /*
    {"memfill", Cmd_memfill, "addr cont byte", "Llena la memoria a partir de addr con byte"},
-   */
    {"memdump", Cmd_memdump, "addr cont", "Vuelca en pantallas los contenidos (cont bytes) de la posicion de memoria addr"},
    {NULL,NULL, NULL, NULL},
 };

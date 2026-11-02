@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -g -Wall
 
-p1: p1.c comandos.o files.o mem.o path.o listasimple.o
-	$(CC) -o p1 $(CFLAGS) p1.c comandos.o files.o mem.o path.o listasimple.o
+p2: p2.c comandos.o files.o mem.o path.o listasimple.o
+	$(CC) -o p2 $(CFLAGS) p2.c comandos.o files.o mem.o path.o listasimple.o
 
 comandos.o: comandos.c comandos.h path.h
 	$(CC) -c $(CFLAGS) comandos.c
@@ -20,4 +20,4 @@ mem.o: mem.c mem.h
 	$(CC) -c $(CFLAGS) mem.c
 
 clean:
-	rm p1 *.o
+	rm p2 *.o
