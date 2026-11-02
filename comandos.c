@@ -1554,42 +1554,110 @@ void Cmd_io(char *args[]){
 }
 
 
-// Funcion auxiliar para memory:
-/*
-void Do_pmap (void) // Sin argumentos
- { pid_t pid;       // Hace el pmap (o equivalente) del proceso actual
-   char elpid[32];
-   char *argv[4]={"pmap",elpid,NULL};
+// Funcion auxiliar para memory -pmap:
+void Do_pmap (void){ // Sin argumentos
+    pid_t pid;       // Hace el pmap (o equivalente) del proceso actual
+    char elpid[32];
+    char *argv[4] ={"pmap", elpid, NULL};           // argv[0] = pmap, argv[1] = pid proceso actual, argv[2] = NULL
    
-   sprintf (elpid,"%d", (int) getpid());
-   if ((pid=fork())==-1){
-      perror ("Imposible crear proceso");
-      return;
-      }
-   if (pid==0){
-      if (execvp(argv[0],argv)==-1)
-         perror("cannot execute pmap (linux, solaris)");
-         
-      argv[0]="procstat"; argv[1]="vm"; argv[2]=elpid; argv[3]=NULL;   
-      if (execvp(argv[0],argv)==-1)        // No hay pmap, probamos procstat FreeBSD 
-         perror("cannot execute procstat (FreeBSD)");
-         
-      argv[0]="procmap",argv[1]=elpid;argv[2]=NULL;    
-            if (execvp(argv[0],argv)==-1)  // Probamos procmap OpenBSD
-         perror("cannot execute procmap (OpenBSD)");
-         
-      argv[0]="vmmap"; argv[1]="-interleave"; argv[2]=elpid;argv[3]=NULL;
-      if (execvp(argv[0],argv)==-1)        // Probamos vmmap Mac-OS
-         perror("cannot execute vmmap (Mac-OS)");      
-      exit(1);
-  }
-  waitpid (pid,NULL,0);
-}
-*/
+    sprintf (elpid, "%d", (int) getpid());          // elpid = pid proceso actual
+    if ((pid = fork()) == -1){                      // Se crea proceso hijo:
+        perror ("Imposible crear proceso");
+        return;
+    }
+    if (pid == 0){
+        // Se ejecuta pmap dependiendo del kernel:
 
+        if (execvp(argv[0], argv) == -1)            
+            perror("cannot execute pmap (linux, solaris)");
+         
+        argv[0]="procstat"; argv[1]="vm"; argv[2]=elpid; argv[3]=NULL;   
+        if (execvp(argv[0],argv)==-1)                // No hay pmap, probamos procstat FreeBSD 
+            perror("cannot execute procstat (FreeBSD)");
+         
+        argv[0]="procmap",argv[1]=elpid;argv[2]=NULL;    
+        if (execvp(argv[0],argv)==-1)                // Probamos procmap OpenBSD
+            perror("cannot execute procmap (OpenBSD)");
+         
+        argv[0]="vmmap"; argv[1]="-interleave"; argv[2]=elpid;argv[3]=NULL;
+        if (execvp(argv[0],argv)==-1)                  // Probamos vmmap Mac-OS
+            perror("cannot execute vmmap (Mac-OS)");      
+        exit(1);
+    }
+
+    // Esperamos a que termine el proceso hijo:
+    waitpid (pid, NULL, 0);
+}
+
+
+// Variables globales:
+int global1 = 534; int global2 = 123; char global3 = 'b';
+int niglob1, niglob2, niglob3;
+
+
+// Funcion auxiliar para memory:
+void ImprimirMemoriaProcesoActual(int lib, int vars){
+    
+    // Inicializacion de variables locales y estaticas:
+    int local1 = 689; int local2 = 456; int local3 = 321;
+    static int estatico1 = 56; static int estatico2 = 234; static char estatico3 = 'c';
+    static int niestatico1, niestatico2, niestatico3;
+
+    // Con el parametro -vars:
+    if (vars)
+        printf("Variables locales %12p, %12p, %12p\nVariables globales %12p, %12p, %12p\nVar (N.I.) globales %12p, %12p, %12p\nVariables estaticas %12p, %12p, %12p\nVar (N.I.) estaticas %12p, %12p, %12p\n", &local1, &local2, &local3, &global1, &global2, &global3, &niglob1, &niglob2, &niglob3, &estatico1, &estatico2, &estatico3, &niestatico1, &niestatico2, &niestatico3);
+    
+    // Con el parametro -funcs:
+    // Mostramos direcciones de 3 funciones o librerias cualesquiera:
+    if (lib)
+        printf("Funciones programa %12p, %12p, %12p\nFunciones libreria %12p, %12p, %12p\n", (void *) Do_pmap, (void *) do_IOReadFile, (void *) do_IOWriteFile, (void *) printf, (void *) malloc, (void *) free);
+
+}
 
 
 void Cmd_memory(char *args[]){
+
+    // Si solo se pasa "memory", se lista la memoria del proceso actual:
+    if (args[0] == NULL){
+        ImprimirMemoriaProcesoActual(1, 1);
+        return;
+    }
+
+    // Para -blocks:
+    if (!strcmp(args[0], "-blocks")){
+        ImprimirTablaMemoriaFiltrada(0, 1);
+        return;
+    }
+
+    // Para -funcs,
+    // Imprimimos memoria de funciones y librerias:
+    if (!strcmp(args[0], "-funcs")){
+        ImprimirMemoriaProcesoActual(1, 0);
+        return;
+    }
+
+    // Para -vars:
+    // Imprimimos memoria de variables:
+    if (!strcmp(args[0], "-vars")){
+        ImprimirMemoriaProcesoActual(0, 1);
+        return;
+    }
+
+    // Para -all:
+    if (!strcmp(args[0], "-all")){
+        ImprimirMemoriaProcesoActual(1, 1);
+        ImprimirTablaMemoriaFiltrada(0, 1);
+        return;
+    }
+
+    // Para -pmap:
+    if (!strcmp(args[0], "-pmap")){
+        Do_pmap();
+        return;
+    }
+
+    // Otro parametro:
+    printf("Opcion %s no contemplada\n", args[0]);
 
 }
 
