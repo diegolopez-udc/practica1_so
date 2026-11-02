@@ -1052,10 +1052,10 @@ void * ObtenerMemoriaShmget (key_t clave, size_t tam){
     if ((id = shmget(clave, tam, flags)) == -1)   // Llamada al sistema para acceder
         return (NULL);                            // a la memoria compartida
     if ((p = shmat(id, NULL, 0)) == (void*) -1){  // Adjunta la memoria compartida al espacio de direcciones 
-        aux=errno;                                // de la shell
+        aux = errno;                              // de la shell
         if(tam)
              shmctl(id, IPC_RMID, NULL);          // Borra el segmento de memoria compartida
-        errno=aux;
+        errno = aux;
         return (NULL);
     }
     shmctl (id, IPC_STAT, &s);                    // Si no es crear, necesitamos el tamano, que es s.shm_segsz
@@ -1400,53 +1400,156 @@ void Cmd_deallocate(char *args[]){
 
 
 // Funcion auxiliar para i-o y read:
-/*
 ssize_t LeerFichero (char *f, void *p, size_t cont){
    
     struct stat s;
     ssize_t  n;  
     int df,aux;
 
-    if (stat (f,&s)==-1 || (df=open(f,O_RDONLY))==-1)
+    // Obtiene informacion del fichero y lo abre en modo lectura:
+    if (stat(f, &s) == -1 || (df = open(f, O_RDONLY)) == -1)
 	    return -1;     
-    if (cont==-1)   // Si pasamos -1 como bytes a leer lo leemos entero
-	    cont=s.st_size;
-    if ((n=read(df,p,cont))==-1){
-	    aux=errno;
+
+    // Si pasamos -1 como bytes a leer lo leemos entero:
+    if (cont == -1)
+	    cont = s.st_size;
+    
+    // Llamada al sistema read():
+    if ((n = read(df, p, cont)) == -1){
+	    aux = errno;                    // Guardamos el error de lectura
 	    close(df);
-	    errno=aux;
+	    errno = aux;                    // Guardamos el errno para poder cerrarlo y luego restaurarlo
 	    return -1;
     }
     close (df);
+
+    // Devolvemos el tamanho:
     return n;
 }
-*/
+
+
+// Funcion auxiliar para i-o y read:
+ssize_t EscribirFichero (char *f, void *p, size_t cont, int overwrite){
+   
+    struct stat s;
+    ssize_t  n;  
+    int df,aux;
+
+    // Obtiene informacion del fichero y lo abre en modo escritura:
+    if (overwrite){
+        // Sobreescribimos el fichero (-o):
+        if (stat(f, &s) == -1 || (df = open(f, O_WRONLY | O_CREAT | O_TRUNC, 0666)) == -1)
+	        return -1;   
+    }else{
+        // No sobreescribimos el fichero:
+        if (stat(f, &s) == -1 || (df = open(f, O_WRONLY | O_CREAT | O_EXCL, 0666)) == -1)
+            return -1;
+    }
+
+    // Si pasamos -1 como bytes a escribir lo escribimos entero:
+    if (cont == -1)   
+        cont = s.st_size;
+    
+    // Llamada al sistema write():
+    if ((n = write(df, p, cont)) == -1){
+        aux = errno;                    // Guardamos el error de escritura
+        close(df);
+        errno = aux;                    // Guardamos el errno para poder cerrarlo y luego restaurarlo
+        return -1;
+    }
+    close (df);
+
+    // Devolvemos el tamanho:
+    return n;
+}
 
 
 // Funcion auxiliar para i-o:
-/*
-void do_IOReadFile (char *ar[]){
-
+void do_IOReadFile (char *arg[]){
     void *p;
-    size_t cont=-1;  // Si no pasamos tamano se lee entero
+    size_t cont = -1;  // Si no pasamos tamanho se lee entero
     ssize_t n;
-    if (ar[0]==NULL || ar[1]==NULL){
+
+    // Si no se pasan los 2 parametros necesarios:
+    if (arg[0] == NULL || arg[1] == NULL){
 	    printf ("faltan parametros\n");
 	    return;
     }
-    p=CadenatoPointer(ar[1]);  // Convertimos de cadena a puntero
-    if (ar[2]!=NULL)
-	    cont=(size_t) atoll(ar[2]);
 
-    if ((n=LeerFichero(ar[0],p,cont))==-1)
+    // Declaramos el puntero y el tamanho a leer:
+    p = CadenatoPointer(arg[1]);  // Convertimos de cadena a puntero
+    if (arg[2] != NULL)
+	    cont = (size_t) atoll(arg[2]);      // Recordatorio: atoll() convierte de string a long.
+
+    // Recurrimos a la funcion auxiliar para leer el fichero:
+    if ((n = LeerFichero(arg[0], p, cont)) == -1)
 	    perror ("Imposible leer fichero");
+
+    // Salida de exito:
     else
-	    printf ("leidos %lld bytes de %s en %p\n",(long long) n,ar[0],p);
+	    printf ("leidos %lld bytes de %s en %p\n", (long long) n, arg[0], p);
 }
-*/
+
+
+void do_IOWriteFile (char *arg[]){
+    void *p;
+    size_t cont = -1;  // Si no pasamos tamanho se escribe entero
+    ssize_t n;
+    int aux = 0;
+
+    // Si no hay parametros:
+    if (arg[0] == NULL){
+        printf ("faltan parametros\n");
+        return;
+    }
+
+    // Si no se pasan los parametros necesarios:
+    if (!strcmp(arg[0], "-o"))
+        aux = 1;
+        
+    if (arg[aux] == NULL || arg[aux + 1] == NULL){
+        printf ("faltan parametros\n");
+        return;
+    }
+
+    // Declaramos el puntero y el tamanho a escribir:
+    p = CadenatoPointer(arg[aux + 1]);                    // Convertimos de cadena a puntero
+    if (arg[aux + 2] != NULL)
+        cont = (size_t) atoll(arg[aux + 2]);              // Recordatorio: atoll() convierte de string a long.
+
+    // Llamada al sistema write():
+    if ((n = EscribirFichero(arg[aux], p, cont, aux)) == -1)   // Escribimos en stdout (descriptor 1)
+        perror ("Imposible escribir fichero");
+
+    // Salida de exito:
+    else
+        printf ("escritos %lld bytes de %p en stdout\n", (long long) n, p);
+
+}
 
 
 void Cmd_io(char *args[]){
+
+    // Si solo se pasa "io", se muestra una pequenha ayuda de uso:
+    if (args[0] == NULL){
+        printf("uso: io [-read|-write] fich dir [bytes]\n");
+        return;
+    }
+
+    // Tipo read:
+    if (!strcmp(args[0], "read")){
+        do_IOReadFile(args + 1);
+        return;
+    }
+
+    // Tipo write:
+    if (!strcmp(args[0], "write")){
+        do_IOWriteFile(args + 1);
+        return;
+    }
+    
+    // Si no se pasa ni "-read" ni "-write", se muestra otra vez la ayuda de uso:
+    printf("uso: io [-read|-write] fich dir [bytes]\n");
 
 }
 
