@@ -1596,34 +1596,92 @@ void Cmd_memory(char *args[]){
 
 void Cmd_read(char *args[]){
 
+    // Comprobamos que los parametros no son nulos:
+    if (args[0] == NULL || args[1] == NULL || args[2] == NULL) {
+        printf("Parametros incorrectos\n");
+        return;   
+    }
+
+    // Declaracion variables:
+    int df = atoi(args[0]);
+    int cont = atoi(args[2]);
+    void *p = CadenatoPointer(args[1]);
+
+    // Proceso de lectura:
+    ssize_t leidos = read(df, p, cont);
+    if (leidos == -1) {         // Como perror() solo acepta una cadena de texto, le pasamos el mensaje ya hecho:
+        char mensaje_error[MAXMERROR];
+        snprintf(mensaje_error, sizeof(mensaje_error), "Error al leer del descriptor %d a la direccion %p", df, p);
+        perror(mensaje_error);
+
+    // Salida de exito:
+    }else {
+        printf ("Leidos %zd bytes del descriptor %d en la direccion %p\n", leidos, df, p);
+    }
 }
 
 
+
 void Cmd_write(char *args[]){
+
+    // Comprobamos que los parametros son correctos:
+    if (args[0] == NULL || args[1] == NULL || args[2] == NULL) {
+        printf("Parametros incorrectos\n");
+        return;
+    }
+
+    // Declaracion de variables:
+    int df = atoi(args[0]);
+    int cont = atoi(args[2]);
+    void *p = CadenatoPointer(args[1]);
+
+    // Proceso de escritura:
+    ssize_t escritos = write(df, p, cont);
+    if (escritos == -1) {
+        char mensaje_error[MAXMERROR];
+        snprintf(mensaje_error, sizeof(mensaje_error), "Error al escribir en el descriptor %d desde la direccion %p", df, p);
+        perror(mensaje_error);
+    
+    // Salida de exito:
+    }else {
+        printf("Escritos %zd bytes en el descriptor %d desde la direccion %p\n", escritos, df, p);
+    }
 
 }
 
 
 // Funcion auxiliar para recurse:
-/*
 void Recursiva (int n){
+
+    // Inicializacion de direcciones de memoria automaticas y estaticas:
     char automatico[MAXSTACK];
     static char estatico[MAXSTACK];
 
-    printf ("parametro:%3d(%p) array %p, arr estatico %p\n",n,&n,automatico, estatico);
+    // Salida:
+    // EXPLICACION: La diferencia entre las direcciones del array automatico (local) = tamanho de marco de la pila (stack frame)
+    //              => para el array automatico, cada llamada recursiva almacena en la pila (direccion de memoria por llamada)
+    //              MIENTRAS QUE las direcciones del array estatico SIEMPRE SON LAS MISMAS direcciones de memoria
+    printf ("parametro:%3d(%p) array %p, arr estatico %p\n", n, &n, automatico, estatico);
 
-    if (n>0)
-        Recursiva(n-1);
+    if (n > 0)
+        Recursiva(n - 1);
 }
-*/
 
 
 void Cmd_recurse(char *args[]){
 
+    // Si no recibe argumento, no hacemos nada:
+    if (args[0] == NULL) return;
+
+    // Convertimos el texto a entero:
+    int n = atoi(args[0]);
+
+    // Llamamos recursivamente a la funcion auxiliar:
+    Recursiva(n);
 }
 
 
-// Funcion auxiliar:
+// Funcion auxiliar para memfill y memdump:
 /*
 void LlenarMemoria (void *p, size_t cont, unsigned char byte){
     unsigned char *arr=(unsigned char *) p;
@@ -1646,6 +1704,7 @@ void Cmd_memdump(char *args[]){
 
 
 /**********************************************/
+
 
 //Comandos que no estan en la practica pero son imprescindibles para el funcionamiento:
 void Cmd_exec (char *arg[])
