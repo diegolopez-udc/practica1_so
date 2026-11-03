@@ -120,8 +120,8 @@ static struct COMANDO C[]={
    {"recurse", Cmd_recurse, "[n]", "Invoca a la funcion recursiva n veces"},
    /*
    {"memfill", Cmd_memfill, "addr cont byte", "Llena la memoria a partir de addr con byte"},
-   {"memdump", Cmd_memdump, "addr cont", "Vuelca en pantallas los contenidos (cont bytes) de la posicion de memoria addr"},
    */
+   {"memdump", Cmd_memdump, "addr cont", "Vuelca en pantallas los contenidos (cont bytes) de la posicion de memoria addr"},
    {NULL,NULL, NULL, NULL},
 };
 

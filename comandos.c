@@ -1749,16 +1749,15 @@ void Cmd_recurse(char *args[]){
 }
 
 
-// Funcion auxiliar para memfill y memdump:
-/*
+// Funcion auxiliar para memfill:
 void LlenarMemoria (void *p, size_t cont, unsigned char byte){
-    unsigned char *arr=(unsigned char *) p;
+    unsigned char *arr = (unsigned char *) p;
     size_t i;
 
-    for (i=0; i<cont;i++)
-	    arr[i]=byte;
+    for (i = 0; i < cont; i++)
+	    arr[i] = byte;
+
 }
-*/
 
 
 void Cmd_memfill(char *args[]){
@@ -1766,8 +1765,84 @@ void Cmd_memfill(char *args[]){
 }
 
 
-void Cmd_memdump(char *args[]){
+// Funcion auxiliar para memdump:
+void ImprimirMemoria (void *p, size_t cont, size_t predeterm){
 
+    // Declaracion de variables:
+    unsigned char *arr = (unsigned char *) p;   // Accedemos A LO QUE APUNTA LA DIRECCION
+    size_t i;
+    size_t j;
+
+    // IMPRESION:
+
+    for (i = 0; i < cont; i += predeterm) {
+
+        // Declaramos los bytes impresos en la linea:
+        size_t bytes_en_linea = predeterm;
+        if (i + bytes_en_linea > cont)          // Si los bytes a imprimir son menos que predeterm, ajustamos:
+            bytes_en_linea = cont - i;
+
+        // Impresion en ASCII:
+        for (j = 0; j < bytes_en_linea; j++) {
+
+            if(j == 0)
+                printf("%p->  ", (void *)(arr + i));  // Imprimimos la direccion de memoria de la linea
+
+            unsigned char c = arr[i + j];
+            if (c >= 32 && c <= 126)            // Si es un carácter imprimible ASCII
+                printf("%2c", c);
+
+            // Habilitamos impresion de 3 caracteres especiales:
+            else if (arr[i + j] == '\n')            // Si es un salto de linea
+                printf("\\n");
+            else if (arr[i + j] == '\t')            // Si es una tabulacion
+                printf("\\t");
+            else if (arr[i + j] == '\r')            // Si es un retorno de carro
+                printf("\\r");
+
+            // Si no es imprimible, imprimimos un hueco en blanco:
+            else
+                printf(" ");
+
+            printf(" ");
+        }
+        printf("\n");
+
+        // Impresion en Hexadecimal:
+        for (j = 0; j < bytes_en_linea; j++) {
+
+            if(j == 0)
+                printf("%p->  ", (void *)(arr + i));  // Imprimimos la direccion de memoria de la linea
+
+            printf("%02x", arr[i + j]);
+
+            printf(" ");
+        }
+        printf("\n");
+
+    }
+
+}
+
+void Cmd_memdump(char *args[]){
+    size_t cnt = (size_t) 20;
+    void *p;
+
+    // Si solo se pasa "memdump", no se hace nada:
+    if (args[0] == NULL)
+        return;
+
+    // Convertimos la cadena hexadecimal a un puntero de bytes
+    p = (unsigned char *) CadenatoPointer(args[0]);
+
+    // Convertimos cont:
+    if (args[1] != NULL)
+        cnt = atoi(args[1]);                          // Si no se pasa cont, imprimiremos 20 bytes por defecto
+
+    // Hacemos proceso de impresion a traves de la funcion auxiliar:
+    printf("Volcando %zu bytes desde la direccion %p\n", cnt, p);
+    ImprimirMemoria(p, cnt, 20);  // Imprimimos 20 bytes por linea por defecto
+    
 }
 
 
