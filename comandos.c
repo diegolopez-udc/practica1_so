@@ -75,7 +75,6 @@ char LetraTF (mode_t m)
     }
 }
 
-
 /*  Devuelven los permisos de un fichero en formato rwx---- 
     en base al campo st_mode del struct stat                 */
 
@@ -189,7 +188,6 @@ void imprimirElementoList(const char *nombre, const char *path, struct stat *st,
     } else
         printf("\n");
 }
-
 
 
 /*** FUNCIONES RECURSIVAS ***/
@@ -343,7 +341,6 @@ void listarRec(char *path, int reca, int recb, int hid,
     closedir(direcc);
 
 }
-
 
 
 /*********************************************/
@@ -651,7 +648,6 @@ void Cmd_dup (char *arg[]){
 
 }
 
-
 void Cmd_lseek (char *args[]){
     int df;
 
@@ -691,7 +687,6 @@ void Cmd_lseek (char *args[]){
 
 
 }
-
 
 void Cmd_readstr (char *args[]){
     
@@ -738,7 +733,6 @@ void Cmd_readstr (char *args[]){
     // Liberamos la memoria que habiamos reservado:
     free(buffer);
 }
-
 
 void Cmd_writestr (char *args[]){
 
@@ -791,7 +785,6 @@ void Cmd_writestr (char *args[]){
     free(buffer);
 }
 
-
 void Cmd_makefile (char *args[]){
 
     // Se pasa solo "makefile", se muestra el cwd:
@@ -814,7 +807,6 @@ void Cmd_makefile (char *args[]){
     close(df);
 }
 
-
 void Cmd_makedir (char *args[]){
 
     // Se pasa solo "makedir", se muestra el cwd:
@@ -834,7 +826,6 @@ void Cmd_makedir (char *args[]){
     }
 
 }
-
 
 void Cmd_delete (char *args[]){
 
@@ -934,7 +925,6 @@ void Cmd_listfile (char *args[]){
         
 }
 
-
 void Cmd_list(char *args[])
 {
     int recamode = 0, recbmode = 0, hidmode = 0, longmode = 0, linkmode = 0, accmode = 0;
@@ -1004,6 +994,13 @@ void * CadenatoPointer (char *s)
   return p;
 }
 
+// Conversion de cadena a byte para memfill
+unsigned char CadenaAByte (char *s){
+    if (s[0] == '\'' && s[1] != '\0')
+        return (unsigned char) s[1];
+    return (unsigned char) strtoul(s, NULL, 16); //en ref es base 0 pero mejor 16 no??
+}
+
 
 // Funcion auxiliar para allocate -malloc:
 void do_AllocateMalloc(char *tr[]){
@@ -1035,7 +1032,6 @@ void do_AllocateMalloc(char *tr[]){
     InsertarBloqueMalloc(p, tam);
     printf ("Asignados %lu bytes en %p\n",(unsigned long) tam, p);
 }
-
 
 // Funcion auxiliar para allocate -createshared / -shared:
 void * ObtenerMemoriaShmget (key_t clave, size_t tam){
@@ -1135,7 +1131,6 @@ void * MapearFichero (char * fichero, int protection){
     return p;
 }
 
-
 // Funcion auxiliar para allocate -mmap:
 void do_AllocateMmap(char *arg[]){ 
     char *perm;
@@ -1227,7 +1222,6 @@ void do_DeallocateMalloc(size_t siz){
 
 }
 
-
 // Funcion auxiliar para deallocate -shared:
 void do_DeallocateShared (key_t cl){
     tBloqueMem *p;  
@@ -1271,7 +1265,6 @@ void do_DeallocateMmap(char *fil){
         printf ("Imposible quitar de lista: %s\n", strerror(errno));
 
 }
-
 
 // Funcion auxiliar para deallocate -delkey:
 void do_SharedDelkey (char *args[]){
@@ -1400,7 +1393,6 @@ void Cmd_deallocate(char *args[]){
     // Es una direccion:
     do_DelAddr(args[0]);
 }
-
 
 // Funcion auxiliar para i-o y read:
 
