@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>    
+
 #include <unistd.h>           // Permite hacer llamadas al sistema
 #include <time.h>             // Formatear fechas del sistema
 #include <dirent.h>           // Abrir, leer y cerrar directorios en el sistema de archivos
@@ -34,14 +35,12 @@ extern char prompt[MAXPROMPT];
 
 
 // Tipo de struct COMANDO:
-
 struct COMANDO{
    char *nombre;
    void (*funcion)(char**);
    char *arguments;           // Aniadimos strings de argumentos y ayudas para comando help.
    char *help; 
 };
-
 
 
 /*********************************************/

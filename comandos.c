@@ -463,6 +463,7 @@ void Cmd_fin (char * arg[])  /*todos los cmd_ comparten prototipo*/
     VaciarTablaMemoria();
     VaciarListaProcesos();
 
+
     exit(0);
 }
 
