@@ -39,6 +39,10 @@ struct COMANDO{
 };
 
 
+// Inicializacion environ para acceder a las variables de entorno:
+extern char **environ;
+
+
 /*********************************************/
 
 
@@ -85,6 +89,7 @@ void Cmd_changevarWrong (char *arg[]);
 void Cmd_fork (char *arg[]);
 void Cmd_ejec (char *arg[]);
 void Cmd_ejecpri (char *arg[]);
+void Cmd_pplano (char *arg[]);
 void Cmd_pplanopri(char *arg[]);
 void Cmd_splano (char *arg[]);
 void Cmd_splanopri (char *arg[]);
@@ -92,7 +97,6 @@ void Cmd_jobs (char *arg[]);
 void Cmd_deljobs (char *arg[]);
 
 void Cmd_exec (char *arg[]);
-void Cmd_pplano (char *arg[]);
 void Cmd_importpath (char *arg[]);
 
 
@@ -143,10 +147,10 @@ static struct COMANDO C[]={
    {"fork", Cmd_fork, "", "El shell hace fork y queda en espera a que su hijo termine"},
    {"ejec", Cmd_ejec, "VAR1 VAR2 ..prog args....[@pri]", "Ejecuta, sin crear proceso,prog con argumentos\n\ten un entorno que contiene solo las variables VAR1, VAR2..."},
    {"ejecpri", Cmd_ejecpri, "prio prog args....", "Ejecuta, sin crear proceso, prog con argumentos con la prioridad cambiada a prio"},
-   {"pplano", Cmd_pplano, "prog args...", "Crea un proceso que ejecuta en primer plano prog con argumentos"},
-   {"pplanopri", Cmd_pplanopri, "prio prog args...", "Crea un proceso que ejecuta en primer plano prog con argumentos  con la prioridad cambiada a prio"},
-   {"splano", Cmd_splano, "prog args...", "Crea un proceso que ejecuta en segundo plano prog con argumentos"},
-   {"splanopri", Cmd_splanopri, "prio prog args...", "Crea un proceso que ejecuta en segundo plano prog con argumentos con la prioridad cambiada a prio"},
+   {"pplano", Cmd_pplano, "prog args...", "Crea un proceso que ejecuta en primer plano prog con argumentos args"},
+   {"pplanopri", Cmd_pplanopri, "prio prog args...", "Crea un proceso que ejecuta en primer plano prog con argumentos args con la prioridad cambiada a prio"},
+   {"splano", Cmd_splano, "prog args...", "Crea un proceso que ejecuta en segundo plano prog con argumentos args"},
+   {"splanopri", Cmd_splanopri, "prio prog args...", "Crea un proceso que ejecuta en segundo plano prog con argumentos args con la prioridad cambiada a prio"},
    {"jobs", Cmd_jobs, "", "Lista los procesos en segundo plano"},
    {"deljobs", Cmd_deljobs, "[-term][-sig]", "Elimina los procesos de la lista procesos en sp\n\t-term: los terminados\n\t-sig: los terminados por senal"},
    {NULL,NULL, NULL, NULL},

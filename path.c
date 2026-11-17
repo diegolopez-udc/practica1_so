@@ -68,8 +68,9 @@ int PathAddPath (void)
     return i;   /*devolvemos cuantos directorios se ha aniadido*/
 }
 
-char * Ejecutable (char * s)  /*devuelve la trayectoria completa a un ejecutable*/
-{                               /*si esta en el PATH*/
+// Funcion que devuelve la trayectoria completa a un ejecutable (siempre que este en el path):
+char * Ejecutable (char * s)  
+{                               
 #define   MAXNAME  1024                             
 	static char path[MAXNAME];
 	struct stat st;

@@ -31,33 +31,40 @@ void MostrarDirActual()
         printf ("%s\n",dir);
 }
 
+// Funcion auxiliar que commprueba si se ha ejecutado un comando para segundo plano o no (&):
 int ComprobarSegundoPlano (char *tr[])
 {
     int i;
     for (i=0; tr[i]!=NULL;i++)
-        if (!strcmp(tr[i],"&")){ /*& indica segundo plano*/ 
-            tr[i]=NULL;         /*es el ultimo argumento*/
-            return i;       /*si solo hay un & no se ejecuta nada en pplano*/
-            }
+        if (!strcmp(tr[i],"&")){    // & indica segundo plano 
+            tr[i]=NULL;             // Es el ultimo argumento
+            return i;               // Si solo hay un & no se ejecuta nada en pplano
+        }
     return 0;
 }
 
-
+// Funcion auxiliar que ejecuta un proceso (INSERVIBLE PARA LA P3): 
 void Proceso (char *tr[], int splano)
 {
     pid_t pid;
-    void Cmd_exec (char **);
-    int background=splano || ComprobarSegundoPlano(tr);
-    if ((pid=fork())==-1){
-    perror ("Imposible crear proceso");
+    void Cmd_exec(char **);
+    int background = splano || ComprobarSegundoPlano(tr);
+
+    // Generamos proceso hijo:
+    if ((pid = fork()) == -1){
+        perror ("Imposible crear proceso");
         return;
     }
-    if (pid==0){  /*proceso hijo*/
-        Cmd_exec (tr);
-        exit(255); /*por si falla exec*/
+
+    // Proceso hijo:
+    if (pid == 0){  
+        Cmd_exec(tr);
+        exit(255);                         // Por si falla exec()
     }
-    if (!background) 
-        waitpid(pid,NULL,0);
+
+    // Si es en primer plano, se espera por el hijo:
+    if (!background)                       
+        waitpid(pid, NULL, 0);
 }
 
 // Para primera letra del codigo de permisos del fichero:
@@ -1766,6 +1773,8 @@ void Cmd_memdump(char *args[]){
 /***********************************************/
 
 
+
+
 // Funcion auxiliar para getuid y setuid:
 void printGetuid(void) {
 
@@ -1832,6 +1841,7 @@ void Cmd_setuid (char *arg[]){
     }
 
 }
+
 
 // Funcion auxiliar de prio:
 void getprio(pid_t pid, int priority){
@@ -1907,11 +1917,12 @@ int BuscarVariable (char * var, char *e[]){
     strcpy (aux, var);
     strcat (aux, "=");
     
-    while (e[pos] != NULL)
+    while (e[pos] != NULL){
         if (!strncmp(e[pos], aux, strlen(aux)))
             return (pos);
-        else 
-            pos++;
+        pos++;
+    }
+
     errno = ENOENT;   //No hay tal variable
     return(-1);
 }
@@ -1965,6 +1976,162 @@ void Cmd_fork (char *tr[])
 }
 
 
+// Funcion auxiliar que ejecuta progspec (para ejec, ejecpri, pplano, pplanopri, splano, splanopri):
+// progspec: formato para crear un proceso que ejecuta un programa:
+// [VAR1, VAR2, VAR3...] exec_file [arg1, arg2, ...]
+void ejecProgspec(char *arg[], int splano, int con_prio){
+
+    pid_t pid;
+    int prio = 0;
+    int ind = 0;               // Indice de argumentos
+    char **argv_ejec;          // Argumentos que pasaremos al programa
+    char **env_ejec = environ; // Por defecto, heredamos el entorno completo del shell
+    char **env_custom = NULL;  // Donde almacenamos nuestras variables de entorno
+
+
+    // Si el comando lleva prioridad, debe estar de primer argumento:
+    if (con_prio) {
+
+        // Falta de argumentos:
+        if (arg[0] == NULL) {
+            return;
+        }
+
+        // Procedemos a guardar la prioridad:
+        char *endptr;
+        errno = 0;
+        long val = strtol(arg[0], &endptr, 10);
+
+        if (errno != 0 || *endptr != '\0') {               // Caso de error en conversion:
+            printf("Prioridad no valida: %s\n", arg[0]);
+            return;
+        }
+
+        // Guardamos la prioridad y avanzamos al siguiente argumento:
+        prio = (int) val;
+        ind = 1;
+    }
+
+
+    // Analizar variables de entorno opcionales al inicio (VAR1 VAR2 ...):
+    int num_vars = 0;                                      // Contador de variables de entorno
+    int temp_ind = ind;                                    // Indice auxiliar a partir de ind
+    
+    // Recorremos las variables de entorno:
+    while (arg[temp_ind] != NULL && BuscarVariable(arg[temp_ind], environ) != -1) {
+        num_vars++;
+        temp_ind++;
+    }
+
+    // Si encontramos variables de entorno, construimos un nuevo array de entorno:
+    // Si no, ejec_env seguira siendo environ:
+    if (num_vars > 0) {
+
+        // Hacemos una obtencion dinamica:
+        env_custom = malloc((num_vars + 1) * sizeof(char *));
+        if (env_custom == NULL) {                           // Si falla el malloc:
+            perror("Imposible asignar memoria para el entorno");
+            return;
+        }
+        
+        // Ahora, necesitamos hacer otro bucle para ir insertando las variables de entorno
+        // en env_custom:
+        int i, pos;
+        for (i = 0; i < num_vars; i++) {
+            pos = BuscarVariable(arg[ind + i], environ);
+            env_custom[i] = environ[pos];
+        }
+
+        env_custom[num_vars] = NULL;                       // Ponemos la ultima posicion a NULL
+        env_ejec = env_custom;
+        ind += num_vars;                                   // Avanzamos al siguiente argumento
+    }
+
+    // Si no se ha pasado el ejecutable:
+    if (arg[ind] == NULL) {
+        
+        // Aqui forzamos el error para que la salida sea igual a la Shell de Referencia:
+        errno = EFAULT; 
+        perror("No ejecutado");
+
+        if (env_custom) 
+            free(env_custom);
+
+        return;
+    }
+
+    // El resto de argumentos son los que se le pasan al programa (argv):
+    argv_ejec = &arg[ind];
+
+
+    // Creamos el proceso hijo con fork():
+    if ((pid = fork()) == -1) {
+        perror("Imposible crear proceso");
+        
+        // Si hicimos lista de entorno, la liberamos:
+        if (env_custom) 
+            free(env_custom);
+
+        return;
+    }
+
+    // Proceso Hijo:
+    if (pid == 0) { 
+
+        // Vaciamos listas heredadas del padre para evitar estados inconsistentes:
+        VaciarListaProcesos();
+        
+        // Si el comando requería prioridad, la heredamos con el hijo:
+        if (con_prio) {
+            if (setpriority(PRIO_PROCESS, 0, prio) == -1) {
+                perror("Imposible cambiar prioridad en proceso hijo");
+
+                // Liberamos toda la memoria del hijo (opcional, lo hace el SO por nosotros):
+                free(env_custom);
+                VaciarTablaFicherosAbiertos();
+                PathClear();
+                VaciarTablaMemoria();
+
+                exit(1);
+            }
+        }
+
+        // Ejecutamos el programa:
+        // Como necesitamos la ruta completa del path, nos valemos de nuestra funcion
+        // implementada en path.c
+        execve(Ejecutable(argv_ejec[0]), argv_ejec, env_ejec);
+        
+        // Si execve retorna, ha ocurrido un error:
+        perror("Imposible ejecutar");
+
+        // Liberamos toda la memoria del hijo (opcional, lo hace el SO por nosotros):
+        free(env_custom);
+        VaciarTablaFicherosAbiertos();
+        PathClear();
+        VaciarTablaMemoria();
+
+        exit(1);
+    }
+
+    // Proceso Padre:
+    if (env_custom) {                  // Si hicimos lista de entorno en el padre, la liberamos:
+        free(env_custom);
+    }
+
+
+    // Primer o Segundo Plano?
+    if (!splano) {                     // Primer plano: el padre espera a que el hijo termine
+        waitpid(pid, NULL, 0);
+    } else {                           // Segundo plano: se añade a la lista de procesos en segundo plano
+
+        // Aniadimos el proceso a nuestra lista de procesos en segundo plano:
+        if (AniadirProcesoBackground(pid, &arg[ind]) == -1)
+            perror("Imposible añadir proceso a la lista de segundo plano");
+    
+    }
+
+}
+
 void Cmd_ejec (char *arg[]){
 
 }
@@ -1975,18 +2142,26 @@ void Cmd_ejecpri (char *arg[]){
 }
 
 
-void Cmd_pplanopri(char *arg[]){
+void Cmd_pplano (char *arg[]){
+    // Ejecutamos progspec para primer plano y sin prioridad:
+    ejecProgspec(arg, 0, 0);
+}
 
+void Cmd_pplanopri(char *arg[]){
+    // Ejecutamos progspec para primer plano y con prioridad:
+    ejecProgspec(arg, 0, 1);
 }
 
 
 void Cmd_splano (char *arg[]){
-
+    // Ejecutamos progspec para segundo plano y sin prioridad:
+    ejecProgspec(arg, 1, 0);
 }
 
 
 void Cmd_splanopri (char *arg[]){
-
+    // Ejecutamos progspec para segundo plano y con prioridad:
+    ejecProgspec(arg, 1, 1);
 }
 
 
@@ -2007,13 +2182,12 @@ void Cmd_deljobs (char *arg[]){
 //Comandos que no estan en la practica pero son imprescindibles para el funcionamiento:
 void Cmd_exec (char *arg[]){
 
+    // Ejecuta el proceso:
     if (execv(Ejecutable(arg[0]), arg) == -1)
         perror ("Imposible ejecutar");
 }
 
-void Cmd_pplano (char *arg[]){
-    Proceso(arg,0);
-}
+
 
 void Cmd_importpath (char *arg[]){
     PathAddPath();
