@@ -349,106 +349,9 @@ void listarRec(char *path, int reca, int recb, int hid,
 /*********************************************/
 /*************COMANDOS DEL SHELL************************/
 
-void Cmd_prompt(char * arg[]){
-
-    // No se le pasa nuevo prompt.
-    if (arg[0] == NULL) {
-        printf("->  --->  ->\n");
-        return;
-
-    }
-    // Se le pasa un prompt:
-    char cad[MAXPROMPT];
-    if(arg[0][0] == '%'){                                  // Prompts especiales:
-        struct passwd *pw = getpwuid(getuid());            // Usamos llamadas al sistema para obtener datos del usuario
-                if(!pw){
-                    perror("No se pudo obtener el nombre de usuario");
-                    return;
-                }
-        switch(arg[0][1]){
-            case 'u':
-                strncpy(cad, pw->pw_name, MAXPROMPT - 2);
-                break;
-
-            case 'p':
-                snprintf(cad, sizeof(cad), "%d", getpid());  // Pasa el PID a string
-                break;
-
-            case 'd':
-                if (getcwd(cad, sizeof(cad)) == NULL){           //Asignamos cad a la ruta de dierectorio completa
-                    perror("Error al obtener el directorio");
-                    return;
-                }
-                break;
-
-            case 'D':
-                char dir_actual[MAXPATH];
-                if (getcwd(dir_actual, sizeof(dir_actual)) == NULL) {
-                    perror("Error al obtener el directorio");
-                    return;
-                }
-                
-                size_t len_home = strlen(pw->pw_dir);
-                // Si el directorio actual empieza por la ruta de pw_dir (/home/usuario)
-                if (strncmp(dir_actual, pw->pw_dir, len_home) == 0) {
-                    snprintf(cad, sizeof(cad), "~%s", dir_actual + len_home);    // Contraemos la ruta
-                } else {
-                    strncpy(cad, dir_actual, sizeof(cad) - 1);
-                }
-                break;
 
 
-            case 'B':
-                char cad2[MAXPATH];    // Almacenamos en otro string el directorio actual sin el "/"
-                if (getcwd(cad, sizeof(cad)) == NULL){
-                    perror("Error al obtener el directorio");
-                    return;
-                }
-                strcpy(cad2, cad);                         
-                strcpy(cad, strrchr(cad2, '/') + 1);       // Redefinimos cad
-                break;
 
-            case 'm':
-                if (gethostname(cad, sizeof(cad))){
-                    perror("Error al obtener el nombre de la maquina");
-                    return;
-                }
-                break;
-            case 'o':
-                struct utsname buffer;
-                if (uname(&buffer)){
-                    perror("Error al obtener la información del sistema");
-                    return;
-                }
-                strcpy(cad, buffer.sysname);
-                break;
-            
-            case 't':
-                strcpy(cad, "\t");
-                break;
-
-            case 'n':
-                strcpy(cad, "\n");
-                break;
-
-            case '%':
-                strcpy(cad, "%");
-                break;
-
-            case 'b':
-                strcpy(cad, " ");
-                break;
-
-            default:
-                printf("Error al generar el prompt, se mantiene el antiguo\n");
-                return;
-        }
-
-    }else strcpy(cad, arg[0]);         // Prompt "custom"
-
-    strncpy(prompt, cad, MAXPROMPT - 2); 
-    prompt[MAXPROMPT - 2] = '\0';
-}
 
 
 /********** COMANDOS PRACTICA 1 **********/
@@ -516,7 +419,6 @@ void Cmd_help (char *arg[]){
 
     //Solo se pasa "help":
     if (arg[0] == NULL){
-        printf("Comandos de la Practica 0: prompt\n");
         printf("Comandos de la Practica 1: exit bye date pid authors sysinfo help chdir open close listopen dup lseek readstr writestr makefile makedir delete deltree listfile list\n");
         printf("Comandos de la Practica 2: allocate deallocate i-o read write memory recurse memfill memdump\n");
         printf("Comandos de la Practica 3: getuid setuid prio path showenv showvar changevar changevarWrong fork ejec ejecpri pplano pplanopri splano splanopri jobs deljobs\n");
@@ -1864,18 +1766,124 @@ void Cmd_memdump(char *args[]){
 /***********************************************/
 
 
+// Funcion auxiliar para getuid y setuid:
+void printGetuid(void) {
+
+    // Credencial real:
+    uid_t r_uid = getuid();
+    struct passwd *pw = getpwuid(r_uid);
+    printf("Credencial real: %d, (%s)\n", r_uid, (pw != NULL) ? pw->pw_name : "desconocido");
+
+    // Credencial efectiva:
+    uid_t e_uid = geteuid();
+    pw = getpwuid(e_uid);
+    printf("Credencial efectiva: %d, (%s)\n", e_uid, (pw != NULL) ? pw->pw_name : "desconocido");
+
+}
 
 void Cmd_getuid (char *arg[]){
+    
+    // Llamamos a nuestra funcion auxiliar:
+    printGetuid();
 
 }
 
 
 void Cmd_setuid (char *arg[]){
 
+    // Si solo se pasa "setuid", se hace lo mismo que getuid:
+    if (arg[0] == NULL){
+        printGetuid();
+        return;
+    }
+
+    // Declaramos la variable donde alojaremos el uid:
+    uid_t uid;
+
+    // Se le pasa "-l":
+    if (strcmp(arg[0], "-l") == 0){
+
+        // Solo se le pasa "-l":
+        if (arg[1] == NULL){
+            printGetuid();
+            return;
+        }
+
+        // Se busca el nombre de usuario:
+        struct passwd *nameusr;
+        if ((nameusr = getpwnam(arg[1])) == NULL){
+            printf("Usuario no existente %s\n", arg[1]);
+            return;
+        }
+
+        // Accedemos a su uid:
+        uid = nameusr->pw_uid;
+
+    // Para id:
+    }else                      
+        uid = (int) strtol(arg[0], NULL, 10);
+    
+
+    
+
+    // Llamada a setuid():
+    if ((setuid(uid)) == -1){
+        perror("Imposible cambiar credencial");
+    }
+
 }
 
+// Funcion auxiliar de prio:
+void getprio(pid_t pid, int priority){
+
+    // Impresion de la prioridad del proceso pid:
+    printf("Prioridad del proceso %d es %d\n", pid, priority);
+}
 
 void Cmd_prio (char *arg[]){
+    // Inicializacion variables que necesitaremos:
+    pid_t pid;
+    int priority;
+
+    // Si solo se pasa "prio" o si solo se le pasa el pid:
+    if ((arg[0] == NULL) || (arg[1] == NULL)){
+
+        // Detalle: getpriority() devuelve -1 tanto si hay error accediendo a la prioridad como si
+        // la prioridad es realmente -1. Por ello, necesitamos verificar tambien que 
+        // errno no se ve alterado
+        errno = 0;
+
+        // Elegimos el pid:
+        if (arg[0] == NULL)
+            pid = getpid();
+        else
+            pid = (pid_t) strtol(arg[0], NULL, 10);
+
+        // Accedemos a su prioridad:
+        if (((priority = getpriority(PRIO_PROCESS, pid)) == -1) && (errno != 0)){
+            char mensaje_error[MAXMERROR];
+            snprintf(mensaje_error, sizeof(mensaje_error), "Imposible obtener prioridad de proceso %d", pid);
+            perror(mensaje_error);
+            return;
+        }
+
+        // Imprimimos pid y prioridad:
+        getprio(pid, priority);
+
+        return;
+    }
+
+    // Conversiones:
+    pid = (pid_t) strtol(arg[0], NULL, 10);
+    priority = (int) strtol(arg[1], NULL, 10);
+
+    // Asignamos prioridad:
+    if (setpriority(PRIO_PROCESS, pid, priority) == -1){
+        char mensaje_error[MAXMERROR];
+        snprintf(mensaje_error, sizeof(mensaje_error), "Imposible cambiar la prioridad del proceso %d", pid);
+        perror(mensaje_error);
+        return;
+    }
 
 }
 

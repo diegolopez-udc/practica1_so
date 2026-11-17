@@ -7,8 +7,6 @@ Autores:                            Login:
 
 #include "comandos.h"
 
-//VARIABLES GLOBALES (prompt por defecto):
-char prompt[MAXPROMPT] = "-> ";
 
 /**************************OPERACIONES**************************/
 
@@ -61,7 +59,7 @@ int  main(int argc, char *argv[], char *ent[])
         Cmd_importpath(NULL);
 
    while (1){
-      printf ("%s", prompt);
+      printf ("%s", "-> ");
       if (fgets(entrada,MAXENTRADA,stdin)==NULL)
          break;
       ProcesarEntrada(entrada);

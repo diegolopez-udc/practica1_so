@@ -26,12 +26,8 @@
 // Tamanhos maximos
 #define MAXENTRADA 2048
 #define MAXPATH 1024
-#define MAXPROMPT 128
 #define MAXMERROR 256
 #define MAXVAR 2048           // Asignamos este tamanho para que quepa en una entrada y no desborde el buffer de la pila
-
-//Prompt por defecto:
-extern char prompt[MAXPROMPT];
 
 
 // Tipo de struct COMANDO:
@@ -47,8 +43,6 @@ struct COMANDO{
 
 
 // COMANDOS:
-void Cmd_prompt(char * arg[]);
-
 void Cmd_fin (char * arg[]);
 void Cmd_autores(char *arg[]);
 void Cmd_date (char *arg[]);
@@ -108,7 +102,6 @@ void Cmd_importpath (char *arg[]);
 // Tipo de struct COMANDO:
 
 static struct COMANDO C[]={
-   {"prompt", Cmd_prompt, "[cad]", "Cambia el prompt (simbolo de aviso) del shell a la cadena cad:\n\t%u: nombre usuario\t%p: pid del shell\n\t%d: directorio actual\t%D: directorio actual (contraido)\n\t%B: Ultimo componente del directorio actual\n\t%m: nombre maquina\t%o: nombre del S.O.\n\t%t el tabulador\t%n: fin de linea\n\t%%: el caracter %\t%b: espacio en blanco"},
    {"exit",Cmd_fin, "", "Termina la ejecucion del shell"},
    {"bye",Cmd_fin, "", "Termina la ejecucion del shell"},
    {"date",Cmd_date, "[-d|-t]", "Muestra la fecha y/o la hora actual"},
