@@ -1,6 +1,6 @@
 #include "comandos.h"
 
-
+char **main_ent = NULL;
 
 /*********************************************************/
 /***************GESTION DEL PATH / PROCESOS / FUNCIONES AUXILIARES***************/
@@ -13,7 +13,7 @@ void AniadirAlPath(char *dir)
         perror("Imposible aniadir");
 }
 
-void EliminarDelPath(char *dir)
+void EliminarDelPath(char *dir) 
 {
     if (dir==NULL)
         PathPrint();
@@ -428,7 +428,7 @@ void Cmd_help (char *arg[]){
     if (arg[0] == NULL){
         printf("Comandos de la Practica 1: exit bye date pid authors sysinfo help chdir open close listopen dup lseek readstr writestr makefile makedir delete deltree listfile list\n");
         printf("Comandos de la Practica 2: allocate deallocate i-o read write memory recurse memfill memdump\n");
-        printf("Comandos de la Practica 3: getuid setuid prio path showenv showvar changevar changevarWrong fork ejec ejecpri pplano pplanopri splano splanopri jobs deljobs\n");
+        printf("Comandos de la Practica 3: getuid setuid prio path showenv showvar changevar fork ejec ejecpri pplano pplanopri splano splanopri jobs deljobs\n");
 
         return;
     }
@@ -1899,12 +1899,51 @@ void Cmd_prio (char *arg[]){
 
 
 void Cmd_path(char *arg[]){
+    if (arg[0] == NULL) {
+        PathPrint();
+        return;
+    }
+    if (!strcmp(arg[0], "-add"))
+        AniadirAlPath(arg[1]);
     
+    else if (!strcmp(arg[0], "-del"))
+        EliminarDelPath(arg[1]);
+    
+    else if (!strcmp(arg[0], "-clear"))
+        PathClear();
+    
+    else if (!strcmp(arg[0], "-path")) {
+        int n = PathAddPath();
+        printf("Importados %d directorios en la ruta de busqueda\n", n);
+    
+    } else if ((arg[0])[0] == '+') 
+        AniadirAlPath(arg[0] + 1);
+    
+    else if ((arg[0])[0] == '-') 
+        EliminarDelPath(arg[0] + 1);
+    
+    else PathPrint();
 }
 
 
-void Cmd_showenv (char *arg[]){
+static void MostrarEntorno(char **entorno, char *nombre_entorno) {
+    int i;
+    if (entorno == NULL) return;
+    for (i = 0; entorno[i] != NULL; i++) {
+        printf("%p->%s[%d]=(%p) %s\n", (void *)&entorno[i], nombre_entorno, i, (void *)entorno[i], entorno[i]);
+    }
+}
 
+void Cmd_showenv (char *arg[]){
+    if (arg[0] == NULL) // si la llamamos sin argumentos, muestra el entorno
+        MostrarEntorno(main_ent, "main arg3");
+    else if (!strcmp(arg[0], "-environ"))
+        MostrarEntorno(environ, "environ");
+    else if (!strcmp(arg[0], "-addr")) {
+        printf("environ: %p (almacenado en %p)\n", (void*)environ, (void*)&environ);
+        printf("main arg3: %p (almacenado en %p)\n", (void*)main_ent, (void*)&main_ent);
+    }
+    else printf("Uso: showenv [-environ|-addr]\n");
 }
 
 
@@ -1928,7 +1967,26 @@ int BuscarVariable (char * var, char *e[]){
 }
 
 void Cmd_showvar (char *arg[]){
+    int pos;
+    char *val;
 
+    // Si llamamos a showvar sin argumentos, muestra todo el entorno.
+    if (arg[0] == NULL) {
+        MostrarEntorno(main_ent, "main arg3");
+        return;
+    }
+    // buscamos en el tercer argumento de main
+    pos = BuscarVariable(arg[0], main_ent);
+    if (pos != -1)
+        printf("Con arg3 main %s(%p) @%p\n", main_ent[pos], (void*)main_ent[pos], (void*)&main_ent[pos]);
+    // buscar en environ
+    pos = BuscarVariable(arg[0], environ);
+    if (pos != -1)
+        printf("  Con environ %s(%p) @%p\n", environ[pos], (void *)environ[pos], (void *)&environ[pos]);
+    // buscar con la funcion de libreria getenv()
+    val = getenv(arg[0]);
+    if (val != NULL)
+        printf("   Con getenv %s(%p)\n", val, (void*)val);
 }
 
 
@@ -1954,12 +2012,37 @@ int CambiarVariable(char * var, char * valor, char *e[]){
 }
 
 void Cmd_changevar (char *arg[]){
+    char *aux;
 
-}
+    if (arg[0] == NULL || arg[1] == NULL || arg[2] == NULL) {
+        printf("Uso: changevar [-a|-e|-p] var valor\n");
+        return;
+    }
+    // 3er argumento de main (-a)
+    if (!strcmp(arg[0], "-a")) {
+        if (CambiarVariable(arg[1], arg[2], main_ent) == -1)
+            perror("Imposible cambiar variable");
+    }
+    // environ (-e)
+    else if (!strcmp(arg[0], "-e")) {
+        if (CambiarVariable(arg[1], arg[2], environ) == -1)
+            perror("Imposible cambiar variable");
+    }
+    // putenv (-p)
+    else if (!strcmp(arg[0], "-p")) {
+        aux = malloc(strlen(arg[1]) + strlen(arg[2]) + 2); // +2 bytes por '=' y '\0'
+        if (aux == NULL) {
+            perror("Imposible asignar memoria");
+            return;
+        }
+    sprintf(aux, "%s=%s", arg[1], arg[2]);
+    if (putenv(aux) != 0) {
+        perror("Imposible cambiar variable");
+        free(aux);
+    }
+    }
 
-
-void Cmd_changevarWrong (char *arg[]){
-
+    else printf("Uso: changevar [-a|-e|-p] var valor\n");
 }
 
 

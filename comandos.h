@@ -41,6 +41,7 @@ struct COMANDO{
 
 // Inicializacion environ para acceder a las variables de entorno:
 extern char **environ;
+extern char **main_ent;
 
 
 /*********************************************/
@@ -85,7 +86,6 @@ void Cmd_path(char *arg[]);
 void Cmd_showenv (char *arg[]);
 void Cmd_showvar (char *arg[]);
 void Cmd_changevar (char *arg[]);
-void Cmd_changevarWrong (char *arg[]);
 void Cmd_fork (char *arg[]);
 void Cmd_ejec (char *arg[]);
 void Cmd_ejecpri (char *arg[]);
@@ -143,8 +143,6 @@ static struct COMANDO C[]={
    {"showenv", Cmd_showenv, "[-environ|-addr]", "Muestra el entorno del proceso\n\t-environ: accede usando environ (en lugar del tercer arg de main)\n\t-addr: muestra el valor y donde se almacenan environ y el 3er arg main"},
    {"showvar", Cmd_showvar, "var", "Muestra el valor y las direcciones de la variable de entorno var"},
    {"changevar", Cmd_changevar, "[-a|-e|-p] var valor", "Cambia el valor de una variable de entorno\n\t-a: accede por el tercer arg de main\n\t-e: accede mediante environ\n\t-p: accede mediante putenv"},
-   {"changevarWrong", Cmd_changevarWrong, "-a|-e|-p  -mo|-ma|-ms var valor", "Cambia de manera incorrecta el valor de una variable de entorno\n\t-mo sobreescribe la variable original\n\t-ma usa una variable automatica para crear la nueva variable\n\t-ms usa una variable estatica para crear la nueva variable\n"},
-   {"fork", Cmd_fork, "", "El shell hace fork y queda en espera a que su hijo termine"},
    {"ejec", Cmd_ejec, "VAR1 VAR2 ..prog args....[@pri]", "Ejecuta, sin crear proceso,prog con argumentos\n\ten un entorno que contiene solo las variables VAR1, VAR2..."},
    {"ejecpri", Cmd_ejecpri, "prio prog args....", "Ejecuta, sin crear proceso, prog con argumentos con la prioridad cambiada a prio"},
    {"pplano", Cmd_pplano, "prog args...", "Crea un proceso que ejecuta en primer plano prog con argumentos args"},
